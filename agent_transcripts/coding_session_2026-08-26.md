@@ -98,9 +98,57 @@
 
 ---
 
+### Session 6: OpenRouter Integration & Transcript Ingestion
+
+**Objective**: Integrate OpenRouter as primary LLM provider and ingest 303 real Lenny's Podcast transcripts.
+
+**Actions Taken**:
+1. Cloned ChatPRD/lennys-podcast-transcripts repo (303 episodes with YAML frontmatter)
+2. Created OpenRouterClient using httpx with SSE streaming support
+3. Updated all defaults from Ollama to OpenRouter across backend and frontend
+4. Fixed ingestion script to handle actual transcript format (`<slug>/transcript.md` not `episodes/<slug>/transcript.md`)
+5. Added OpenAI and Anthropic API keys to `.env`
+
+**Issues Encountered**:
+- Transcript path mismatch: ingestion expected `episodes/<slug>/` but actual structure was `<slug>/` → Added fallback glob chain
+- `App.tsx` used `useState` instead of `useRef` for streaming content refs → Fixed with `useRef` + `useEffect` sync
+- Config `.env` path resolution failed when running from subdirectory → Computed absolute path relative to `config.py`
+- Sidebar footer only showed "Ollama Local" → Added comprehensive provider display for all 4 providers
+
+**Resolution**: All 303 transcripts ingested. OpenRouter set as primary with Claude Sonnet 4 as default model.
+
+---
+
+### Session 7: Pre-Submission Audit & Hardening
+
+**Objective**: Systematic audit of all deliverables, code quality, and test coverage before submission.
+
+**Actions Taken**:
+1. Audited all 8 required deliverables against assignment rubric
+2. Fixed streaming endpoint DB session bug (`async with db as save_session` → `async with async_session_maker()`)
+3. Fixed config.py to ignore extra env vars (`VITE_*` frontend vars caused Pydantic validation error)
+4. Migrated Pydantic schemas from deprecated `class Config` to `model_config = ConfigDict(...)`
+5. Fixed agent router keyword detection (added "dashboard component", "create a dashboard")
+6. Created `conftest.py` with mock modules for heavy dependencies (chromadb, sentence_transformers)
+7. Fixed test assertions for OpenRouter defaults, added OpenRouter client factory test
+8. Fixed `extract_guest_name` → `extract_guest_from_path` in tests
+9. Updated all documentation to include OpenRouter (README, architecture.md, design.md)
+10. Created `docs/demo_script.md` with timed video presentation script
+
+**Issues Encountered**:
+- All 28 tests initially failed: `ModuleNotFoundError: No module named 'chromadb'` → Created conftest.py with `sys.modules` pre-mocking
+- 7 API tests failed: `PydanticUserError: "Config" and "model_config" cannot be used together` → Removed old `class Config` inner classes
+- `test_detect_artifact` failed: "Create a pricing dashboard component" not matched → Added flexible keywords
+- `test_default_to_ollama` failed: default was OpenRouterClient not OllamaClient → Updated test to match actual behavior
+
+**Resolution**: All 28 tests passing. Documentation complete. Ready for submission.
+
+---
+
 ### Summary
 
-**Total files created**: ~45
+**Total files created**: ~50
+**Total test cases**: 28 (all passing)
 **Architecture decisions**:
 - SSE over WebSocket (simpler, unidirectional)
 - ChromaDB over pgvector (simpler setup, good enough for demo)
