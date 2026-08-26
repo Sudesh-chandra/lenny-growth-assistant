@@ -119,3 +119,33 @@ Performance (no font loading), native feel on each OS, and sufficient quality fo
 
 ### Why collapsible sidebar?
 Maximizes chat space on smaller screens while keeping session history accessible.
+
+## 9. Visual Reference — E2E Screenshots
+
+### 9.1 Landing Page & Model Toggle
+![Landing Page](screenshots/01_landing_page_and_model_toggle.png)
+*Initial state: sidebar with session list, 4 provider toggle buttons, model dropdown, and suggestion cards.*
+
+### 9.2 Grounded Q&A with Citations
+![Grounded Q&A](screenshots/02_grounded_qa_with_citations.png)
+*Streaming response with structured headings, bullet points, and citation badges linking to transcript sources.*
+
+### 9.3 Out-of-Scope Rejection
+![Out-of-Scope](screenshots/03_out_of_scope_rejection.png)
+*Graceful decline for off-topic queries — no hallucination, clear messaging.*
+
+### 9.4 Ship 30 for 30 Essay
+![Ship 30 Essay](screenshots/04_ship_30_for_30_essay.png)
+*Dedicated essay skill output: bold hook, skimmable subheadings, bullet points, selective bolding, actionable takeaway.*
+
+### 9.5 Artifact Viewer — Preview Tab
+![Artifact Preview](screenshots/05_artifact_viewer_preview.png)
+*Dual-pane split: chat on left, sandboxed iframe artifact preview on right with Preview/Code tabs.*
+
+### 9.6 Artifact Viewer — Code Tab
+![Artifact Code](screenshots/06_artifact_viewer_code_tab.png)
+*Syntax-highlighted source code with one-click copy button.*
+
+### 9.7 Session Persistence
+![Session Persistence](screenshots/07_session_persistence.png)
+*PostgreSQL-backed session history survives page reloads, visible in the sidebar.*

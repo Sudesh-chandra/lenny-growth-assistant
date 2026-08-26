@@ -29,6 +29,7 @@ frontend/.vite/
 # Database
 chroma_db/
 *.sqlite3
+*.db
 
 # Docker
 .docker/
