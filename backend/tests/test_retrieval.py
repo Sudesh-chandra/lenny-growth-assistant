@@ -138,11 +138,13 @@ class TestIngestion:
         chunks = chunk_text("", chunk_size=100, overlap=20)
         assert chunks == []
     
-    def test_extract_guest_name(self):
-        """extract_guest_name should parse common patterns."""
+    def test_extract_guest_from_path(self):
+        """extract_guest_from_path should parse guest name from file path."""
         sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "scripts"))
-        from scripts.ingest import extract_guest_name
+        from scripts.ingest import extract_guest_from_path
         
-        assert extract_guest_name("growth strategies with sarah chen") == "Sarah Chen"
-        assert extract_guest_name("product tips | john doe") == "John Doe"
-        assert extract_guest_name("solo episode") == ""
+        # Test with transcripts/<slug>/transcript.md structure
+        assert extract_guest_from_path("data/transcripts/sarah-chen-growth/transcript.md") == "Sarah Chen Growth"
+        assert extract_guest_from_path("data/transcripts/john-doe/transcript.md") == "John Doe"
+        # Test with episodes/<slug>/transcript.md structure
+        assert extract_guest_from_path("data/transcripts/episodes/jane-smith/transcript.md") == "Jane Smith"

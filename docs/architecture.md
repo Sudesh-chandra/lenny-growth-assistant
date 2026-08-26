@@ -34,10 +34,10 @@
 │  │ └────────────────┘                                       ││
 │  ├──────────────────────────────────────────────────────────┤│
 │  │ LLM Provider Layer                                       ││
-│  │ ┌──────────┐ ┌──────────┐ ┌──────────────┐             ││
-│  │ │ Ollama   │ │ OpenAI   │ │ Anthropic    │             ││
-│  │ │ Client   │ │ Client   │ │ Client       │             ││
-│  │ └──────────┘ └──────────┘ └──────────────┘             ││
+│  │ ┌──────────┐ ┌──────────┐ ┌──────────────┐ ┌──────────┐ ││
+│  │ │ Ollama   │ │ OpenAI   │ │ Anthropic    │ │OpenRouter│ ││
+│  │ │ Client   │ │ Client   │ │ Client       │ │ Client   │ ││
+│  │ └──────────┘ └──────────┘ └──────────────┘ └──────────┘ ││
 │  ├──────────────────────────────────────────────────────────┤│
 │  │ Services: Retrieval | Vector Store                       ││
 │  └──────────────────────────────────────────────────────────┘│
@@ -108,7 +108,7 @@
 {
   "session_id": "uuid-or-null",
   "message": "string (1-10000 chars)",
-  "llm_provider": "ollama|openai|anthropic",
+  "llm_provider": "ollama|openai|anthropic|openrouter",
   "model_name": "model-id",
   "skill": "rag|ship30|artifact|null"
 }
@@ -162,7 +162,10 @@ User Query
 
 ### Ingestion Pipeline
 ```
-Transcript Files (.txt/.json)
+Transcript Files (.md with YAML frontmatter)
+    │  (from ChatPRD/lennys-podcast-transcripts)
+    │  Each episode: episodes/<guest-slug>/transcript.md
+    │  Frontmatter: guest, title, youtube_url, publish_date, keywords
     │
     ▼
 ┌──────────────┐

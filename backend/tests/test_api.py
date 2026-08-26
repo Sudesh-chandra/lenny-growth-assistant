@@ -55,7 +55,7 @@ class TestSessionSchemas:
         from app.schemas import SessionCreate
         session = SessionCreate()
         assert session.title == "New Chat"
-        assert session.llm_provider.value == "ollama"
+        assert session.llm_provider.value == "openrouter"
     
     def test_session_create_custom(self):
         """SessionCreate should accept custom values."""

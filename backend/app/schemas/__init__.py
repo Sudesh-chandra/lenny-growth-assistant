@@ -2,7 +2,7 @@
 Pydantic schemas for request/response validation.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from enum import Enum
@@ -48,21 +48,20 @@ class Citation(BaseModel):
 # ============================================================================
 
 class SessionCreate(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
     title: Optional[str] = "New Chat"
     llm_provider: Optional[LLMProvider] = LLMProvider.OPENROUTER
     model_name: Optional[str] = "anthropic/claude-sonnet-4"
 
 
 class SessionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
     id: str
     title: str
     created_at: Optional[str]
     updated_at: Optional[str]
     llm_provider: str
     model_name: str
-    
-    class Config:
-        from_attributes = True
 
 
 # ============================================================================
@@ -71,6 +70,7 @@ class SessionResponse(BaseModel):
 
 class ChatRequest(BaseModel):
     """Request body for chat endpoint."""
+    model_config = ConfigDict(protected_namespaces=())
     session_id: Optional[str] = Field(None, description="Existing session ID, or None for new session")
     message: str = Field(..., min_length=1, max_length=10000)
     llm_provider: Optional[LLMProvider] = LLMProvider.OPENROUTER
@@ -90,6 +90,7 @@ class ChatResponse(BaseModel):
 
 
 class MessageResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
     id: str
     session_id: str
     role: str
@@ -99,9 +100,6 @@ class MessageResponse(BaseModel):
     artifact_id: Optional[str] = None
     created_at: Optional[str]
     token_count: Optional[int]
-    
-    class Config:
-        from_attributes = True
 
 
 # ============================================================================
@@ -109,6 +107,7 @@ class MessageResponse(BaseModel):
 # ============================================================================
 
 class ArtifactResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: str
     session_id: str
     artifact_type: str
@@ -116,9 +115,6 @@ class ArtifactResponse(BaseModel):
     content: str
     metadata: Optional[Dict[str, Any]] = None
     created_at: Optional[str]
-    
-    class Config:
-        from_attributes = True
 
 
 # ============================================================================
@@ -126,6 +122,7 @@ class ArtifactResponse(BaseModel):
 # ============================================================================
 
 class ModelInfo(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
     provider: str
     model_id: str
     display_name: str

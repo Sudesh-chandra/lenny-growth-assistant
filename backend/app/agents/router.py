@@ -42,6 +42,8 @@ class AgentRouter:
             "create a form", "design a card", "generate css",
             "create a chart", "build a table", "make a ui",
             "artifact", "render this", "create a visual",
+            "dashboard component", "pricing dashboard", "create a dashboard",
+            "landing page", "signup form", "widget",
         ]
         if any(kw in message_lower for kw in artifact_keywords):
             return "artifact"

@@ -10,7 +10,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from app.core.database import get_db
+from app.core.database import get_db, async_session_maker
 from app.core.logging import get_logger
 from app.models import Session, Message, Artifact
 from app.schemas import (
@@ -265,8 +265,8 @@ async def chat_stream(body: ChatRequest, db: AsyncSession = Depends(get_db)):
             logger.error("stream_error", error=str(e))
             yield f"data: {json.dumps({'type': 'error', 'data': str(e)})}\n\n"
         
-        # Save assistant message to DB
-        async with db as save_session:
+        # Save assistant message to DB using a fresh session
+        async with async_session_maker() as save_session:
             content = "".join(full_content)
             
             artifact_id = None

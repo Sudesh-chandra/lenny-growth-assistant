@@ -130,9 +130,16 @@ class TestLLMClientFactory:
         client = get_llm_client("anthropic")
         assert isinstance(client, AnthropicClient)
     
-    def test_default_to_ollama(self):
-        """Should default to OllamaClient for unknown provider."""
+    def test_get_openrouter_client(self):
+        """Should return OpenRouterClient for 'openrouter' provider."""
         from app.services import get_llm_client
-        from app.services.ollama_client import OllamaClient
+        from app.services.openrouter_client import OpenRouterClient
+        client = get_llm_client("openrouter")
+        assert isinstance(client, OpenRouterClient)
+    
+    def test_default_to_openrouter(self):
+        """Should default to OpenRouterClient for unknown provider."""
+        from app.services import get_llm_client
+        from app.services.openrouter_client import OpenRouterClient
         client = get_llm_client("unknown")
-        assert isinstance(client, OllamaClient)
+        assert isinstance(client, OpenRouterClient)

@@ -19,7 +19,7 @@ An AI-powered conversational web application that transforms Lenny's Podcast tra
 │  ┌─────────────────────────────────────────────────────────┐│
 │  │ Agent Router → RAG Agent | Ship30 Agent | Artifact Agent││
 │  ├─────────────────────────────────────────────────────────┤│
-│  │ LLM Layer: Ollama (local) | OpenAI | Anthropic (cloud) ││
+│  │ LLM Layer: Ollama (local) | OpenAI | Anthropic | OpenRouter ││
 │  ├─────────────────────────────────────────────────────────┤│
 │  │ Retrieval Service → ChromaDB Vector Store               ││
 │  └─────────────────────────────────────────────────────────┘│
@@ -106,11 +106,15 @@ npm run dev
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `DATABASE_URL` | Yes* | `postgresql://...` | PostgreSQL connection string |
-| `LLM_PROVIDER` | No | `ollama` | LLM provider: `ollama`, `openai`, `anthropic` |
+| `LLM_PROVIDER` | No | `openrouter` | LLM provider: `ollama`, `openai`, `anthropic`, `openrouter` |
 | `OLLAMA_BASE_URL` | No | `http://localhost:11434` | Ollama server URL |
 | `OLLAMA_MODEL` | No | `llama3` | Default Ollama model |
 | `OPENAI_API_KEY` | For OpenAI | — | OpenAI API key |
+| `OPENAI_MODEL` | No | `gpt-4-turbo-preview` | Default OpenAI model |
 | `ANTHROPIC_API_KEY` | For Anthropic | — | Anthropic API key |
+| `ANTHROPIC_MODEL` | No | `claude-3-sonnet-20240229` | Default Anthropic model |
+| `OPENROUTER_API_KEY` | For OpenRouter | — | OpenRouter API key (200+ models) |
+| `OPENROUTER_MODEL` | No | `anthropic/claude-sonnet-4` | Default OpenRouter model |
 | `CHROMA_PERSIST_DIR` | No | `./chroma_db` | ChromaDB storage directory |
 | `CHUNK_SIZE` | No | `1000` | Transcript chunk size (chars) |
 | `TOP_K_RESULTS` | No | `5` | Number of retrieval results |
@@ -131,6 +135,25 @@ ollama pull codellama     # For code-heavy artifacts
 curl http://localhost:11434/api/tags
 
 # The app will automatically detect available models
+```
+
+## Using OpenRouter (200+ Cloud Models)
+
+[OpenRouter](https://openrouter.ai) provides a unified API for 200+ models including Claude, GPT-4, Gemini, Llama, and more.
+
+```bash
+# 1. Get an API key from https://openrouter.ai/keys
+# 2. Add to .env:
+OPENROUTER_API_KEY=sk-or-v1-your-key-here
+OPENROUTER_MODEL=anthropic/claude-sonnet-4
+
+# 3. Select OpenRouter in the UI sidebar toggle
+# Available models include:
+#   - anthropic/claude-sonnet-4
+#   - openai/gpt-4o
+#   - google/gemini-2.0-flash-001
+#   - meta-llama/llama-3.1-70b-instruct
+#   - deepseek/deepseek-chat
 ```
 
 ## Running Tests

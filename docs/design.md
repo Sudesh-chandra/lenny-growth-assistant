@@ -63,7 +63,7 @@
 - Close button to collapse panel
 
 ### 3.5 Model Switching
-- Toggle buttons for provider (Local / OpenAI / Claude)
+- Toggle buttons for provider (Local / OpenRouter / OpenAI / Claude)
 - Dropdown for specific model selection
 - Status indicator (green = available, gray = offline)
 - Visual feedback on selection change

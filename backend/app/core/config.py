@@ -72,6 +72,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = _env_path
         case_sensitive = False
+        extra = "ignore"  # Ignore extra env vars (e.g., VITE_* frontend vars)
 
 
 settings = Settings()
