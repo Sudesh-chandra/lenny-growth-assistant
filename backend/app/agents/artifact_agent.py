@@ -6,45 +6,22 @@ Detects code blocks and triggers artifact rendering in the frontend.
 import re
 from typing import Dict, Any, Optional, List, AsyncGenerator
 from app.core.logging import get_logger
+from app.core.config import settings
 
 logger = get_logger(__name__)
 
-ARTIFACT_SYSTEM_PROMPT = """You are an expert frontend developer and designer. When asked to create a component, page, or visual artifact, you generate clean, modern, self-contained HTML/CSS code.
+ARTIFACT_SYSTEM_PROMPT = """You are an expert frontend developer. Generate clean, self-contained HTML/CSS code.
 
-## Artifact Generation Rules:
+RULES:
+1. Self-contained: All CSS in <style> tag. No external deps except CDN fonts/icons.
+2. Modern: Clean typography, good spacing, subtle shadows, rounded corners.
+3. Responsive: Works on different screen sizes.
+4. Interactive: Hover states, transitions, relevant JS.
+5. Format: Wrap COMPLETE HTML in ```html code blocks.
+6. Markdown: Wrap in ```markdown blocks.
+7. Quality: Proper alignment, accessible colors, smooth animations.
 
-1. **Self-contained**: All CSS must be inline in a <style> tag. No external dependencies except CDN links for fonts/icons if needed.
-
-2. **Modern design**: Use clean typography, good spacing, subtle shadows, rounded corners, and a professional color palette.
-
-3. **Responsive**: The artifact should look good on different screen sizes.
-
-4. **Interactive**: Include hover states, transitions, and any relevant JavaScript for interactivity.
-
-5. **Format**: When generating an artifact, wrap the COMPLETE HTML document in a code block marked with triple backticks and "html" language tag:
-
-```html
-<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        /* All styles here */
-    </style>
-</head>
-<body>
-    <!-- Content here -->
-    <script>
-        // Any JavaScript here
-    </script>
-</body>
-</html>
-```
-
-6. **For Markdown artifacts**: Wrap in triple backticks with "markdown" tag.
-
-7. **Quality**: Pay attention to details - proper alignment, consistent spacing, accessible colors, and smooth animations.
-
-If the user asks for something that doesn't require an artifact (like a general question), just answer normally without generating code."""
+Answer normally for non-artifact questions."""
 
 
 class ArtifactAgent:
@@ -87,13 +64,13 @@ class ArtifactAgent:
         
         messages = [{"role": "system", "content": ARTIFACT_SYSTEM_PROMPT}]
         
-        for msg in session_history[-5:]:
+        for msg in session_history[-6:]:
             messages.append({"role": msg["role"], "content": msg["content"]})
         
         messages.append({"role": "user", "content": message})
         
         response = await llm_client.complete(
-            messages, model=model, temperature=0.7, max_tokens=4096
+            messages, model=model, temperature=0.7, max_tokens=settings.max_tokens_artifact
         )
         
         # Extract artifact from response
@@ -121,7 +98,7 @@ class ArtifactAgent:
         
         messages = [{"role": "system", "content": ARTIFACT_SYSTEM_PROMPT}]
         
-        for msg in session_history[-5:]:
+        for msg in session_history[-6:]:
             messages.append({"role": msg["role"], "content": msg["content"]})
         
         messages.append({"role": "user", "content": message})

@@ -60,7 +60,13 @@ class Settings(BaseSettings):
     chunk_size: int = 1000
     chunk_overlap: int = 200
     top_k_results: int = 5
+    relevance_threshold: float = 0.5  # Minimum similarity score (0-1) for RAG results
     embedding_model: str = "text-embedding-3-small"
+    
+    # Cost Protection - max output tokens per request type
+    max_tokens_qa: int = 1024  # Standard Q&A responses
+    max_tokens_essay: int = 3000  # Ship 30 essays
+    max_tokens_artifact: int = 4096  # HTML/Markdown artifacts
     
     # Frontend
     frontend_url: str = "http://localhost:5173"

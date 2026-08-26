@@ -5,22 +5,19 @@ Provides inline citations and gracefully handles insufficient context.
 
 from typing import Dict, Any, Optional, List, AsyncGenerator
 from app.core.logging import get_logger
+from app.core.config import settings
 from app.services.retrieval import RetrievalService
 
 logger = get_logger(__name__)
 
-SYSTEM_PROMPT = """You are the Lenny Growth Assistant, an expert AI helper specialized in product management and growth strategies. You answer questions using knowledge from Lenny's Podcast transcripts.
+SYSTEM_PROMPT = """You are the Lenny Growth Assistant, an expert AI helper specialized in product management and growth strategies. Answer using only the provided transcript context.
 
-IMPORTANT RULES:
-1. ONLY use information from the provided transcript context to answer questions.
-2. If the context doesn't contain enough information to answer, clearly state: "I don't have enough information from the available transcripts to answer this question thoroughly."
-3. Always cite your sources using [Source N] notation where N is the source number.
-4. Be conversational, helpful, and precise.
-5. When discussing strategies or frameworks mentioned by guests, attribute them clearly.
-6. If asked about topics outside product/growth, politely redirect to your area of expertise.
-7. Support follow-up questions by maintaining context from the conversation.
-
-When you reference information from the transcripts, include citation markers like [Source 1], [Source 2], etc. that correspond to the source numbers in the context provided."""
+RULES:
+1. ONLY use information from the transcript context.
+2. If context is insufficient, state: "I don't have enough information from the available transcripts to answer this question thoroughly."
+3. Cite sources with [Source N] notation.
+4. Be conversational, precise, and attribute claims to guests.
+5. Redirect off-topic questions to your PM/growth expertise."""
 
 
 class RAGAgent:
@@ -46,8 +43,8 @@ class RAGAgent:
         # Build messages
         messages = [{"role": "system", "content": SYSTEM_PROMPT}]
         
-        # Add conversation history (last 10 messages for context)
-        for msg in session_history[-10:]:
+        # Add conversation history (last 6 messages for balanced context/token ratio)
+        for msg in session_history[-6:]:
             messages.append({"role": msg["role"], "content": msg["content"]})
         
         # Build user message with context
@@ -66,8 +63,8 @@ Note: No relevant transcript context was found. If you cannot answer from genera
         
         messages.append({"role": "user", "content": user_content})
         
-        # Generate response
-        response = await llm_client.complete(messages, model=model, temperature=0.7)
+        # Generate response (1024 tokens sufficient for most Q&A)
+        response = await llm_client.complete(messages, model=model, temperature=0.7, max_tokens=settings.max_tokens_qa)
         
         formatted_citations = []
         if retrieval:
@@ -105,7 +102,7 @@ Note: No relevant transcript context was found. If you cannot answer from genera
         # Build messages
         messages = [{"role": "system", "content": SYSTEM_PROMPT}]
         
-        for msg in session_history[-10:]:
+        for msg in session_history[-6:]:
             messages.append({"role": msg["role"], "content": msg["content"]})
         
         user_content = message

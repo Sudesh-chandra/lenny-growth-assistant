@@ -16,6 +16,7 @@ class RetrievalService:
     def __init__(self):
         self.vector_store = get_vector_store()
         self.top_k = settings.top_k_results
+        self.relevance_threshold = getattr(settings, 'relevance_threshold', 0.5)
     
     def search(
         self,
@@ -40,10 +41,14 @@ class RetrievalService:
             where=where_filter,
         )
         
-        # Format results with citation information
+        # Format results with citation information (filter by relevance threshold)
         citations = []
         for chunk in results:
             metadata = chunk.get("metadata", {})
+            score = chunk.get("score", 0.0)
+            # Filter out low-relevance results
+            if score < self.relevance_threshold:
+                continue
             citation = {
                 "source": metadata.get("episode", "Unknown Episode"),
                 "guest": metadata.get("guest", None),

@@ -4,6 +4,7 @@ Supports Claude, GPT-4, Llama, Mistral, and many more through a single endpoint.
 """
 
 from typing import AsyncGenerator, Optional, List, Dict, Any
+import httpx
 from app.core.config import settings
 from app.core.logging import get_logger
 
@@ -18,9 +19,16 @@ class OpenRouterClient:
         self.model = settings.openrouter_model
         self.base_url = settings.openrouter_base_url
         self.provider_name = "openrouter"
+        self._http_client: Optional[httpx.AsyncClient] = None
         
         if not self.api_key:
             logger.warning("openrouter_api_key_missing")
+    
+    async def _get_client(self) -> httpx.AsyncClient:
+        """Get or create a pooled HTTP client (connection reuse)."""
+        if self._http_client is None or self._http_client.is_closed:
+            self._http_client = httpx.AsyncClient(timeout=120.0)
+        return self._http_client
     
     async def is_available(self) -> bool:
         """Check if OpenRouter API key is configured."""
@@ -96,21 +104,20 @@ class OpenRouterClient:
         model = model or self.model
         
         try:
-            import httpx
-            async with httpx.AsyncClient(timeout=120.0) as client:
-                response = await client.post(
-                    f"{self.base_url}/chat/completions",
-                    headers=self._get_headers(),
-                    json={
-                        "model": model,
-                        "messages": messages,
-                        "temperature": temperature,
-                        "max_tokens": max_tokens,
-                    },
-                )
-                response.raise_for_status()
-                data = response.json()
-                return data["choices"][0]["message"]["content"]
+            client = await self._get_client()
+            response = await client.post(
+                f"{self.base_url}/chat/completions",
+                headers=self._get_headers(),
+                json={
+                    "model": model,
+                    "messages": messages,
+                    "temperature": temperature,
+                    "max_tokens": max_tokens,
+                },
+            )
+            response.raise_for_status()
+            data = response.json()
+            return data["choices"][0]["message"]["content"]
         except httpx.HTTPStatusError as e:
             logger.error("openrouter_http_error", status=e.response.status_code, body=e.response.text[:200])
             raise RuntimeError(f"OpenRouter API error ({e.response.status_code}): {e.response.text[:200]}")
@@ -132,42 +139,40 @@ class OpenRouterClient:
         model = model or self.model
         
         try:
-            import httpx
             import json
-            
-            async with httpx.AsyncClient(timeout=120.0) as client:
-                async with client.stream(
-                    "POST",
-                    f"{self.base_url}/chat/completions",
-                    headers=self._get_headers(),
-                    json={
-                        "model": model,
-                        "messages": messages,
-                        "temperature": temperature,
-                        "max_tokens": max_tokens,
-                        "stream": True,
-                    },
-                ) as response:
-                    response.raise_for_status()
+            client = await self._get_client()
+            async with client.stream(
+                "POST",
+                f"{self.base_url}/chat/completions",
+                headers=self._get_headers(),
+                json={
+                    "model": model,
+                    "messages": messages,
+                    "temperature": temperature,
+                    "max_tokens": max_tokens,
+                    "stream": True,
+                },
+            ) as response:
+                response.raise_for_status()
+                
+                async for line in response.aiter_lines():
+                    if not line or not line.startswith("data: "):
+                        continue
                     
-                    async for line in response.aiter_lines():
-                        if not line or not line.startswith("data: "):
-                            continue
-                        
-                        data_str = line[6:]  # Remove "data: " prefix
-                        if data_str.strip() == "[DONE]":
-                            break
-                        
-                        try:
-                            data = json.loads(data_str)
-                            choices = data.get("choices", [])
-                            if choices:
-                                delta = choices[0].get("delta", {})
-                                content = delta.get("content", "")
-                                if content:
-                                    yield content
-                        except json.JSONDecodeError:
-                            continue
+                    data_str = line[6:]  # Remove "data: " prefix
+                    if data_str.strip() == "[DONE]":
+                        break
+                    
+                    try:
+                        data = json.loads(data_str)
+                        choices = data.get("choices", [])
+                        if choices:
+                            delta = choices[0].get("delta", {})
+                            content = delta.get("content", "")
+                            if content:
+                                yield content
+                    except json.JSONDecodeError:
+                        continue
         except httpx.HTTPStatusError as e:
             logger.error("openrouter_stream_http_error", status=e.response.status_code)
             raise RuntimeError(f"OpenRouter stream error ({e.response.status_code})")

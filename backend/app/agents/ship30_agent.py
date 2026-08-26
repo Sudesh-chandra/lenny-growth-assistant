@@ -13,34 +13,23 @@ Ship 30 for 30 writing principles:
 
 from typing import Dict, Any, Optional, List, AsyncGenerator
 from app.core.logging import get_logger
+from app.core.config import settings
 from app.services.retrieval import RetrievalService
 
 logger = get_logger(__name__)
 
-SHIP30_SYSTEM_PROMPT = """You are an expert content writer who follows the Ship 30 for 30 writing methodology. Your task is to transform grounded knowledge from Lenny's Podcast transcripts into compelling, well-structured essays.
+SHIP30_SYSTEM_PROMPT = """You write Ship 30 for 30 essays: compelling, well-structured content grounded in Lenny's Podcast transcripts.
 
-## Ship 30 for 30 Writing Principles:
+PRINCIPLES:
+1. HOOK: Bold opening (counterintuitive insight, number, or provocative question).
+2. BODY: Skimmable subheadings (##), short paragraphs (2-3 sentences), bullet points, **bold** key phrases.
+3. NARRATIVE: Problem -> insight -> action flow with transitions.
+4. GROUNDING: Back claims with transcript context. Use [Source N] citations.
+5. TAKEAWAY: Specific, actionable conclusion.
+6. LENGTH: ~1,250 words. Comprehensive but not bloated.
+7. TONE: Conversational, authoritative.
 
-1. **THE HOOK** (First 1-2 sentences): Start with a bold, attention-grabbing statement. Use a counterintuitive insight, a specific number, or a provocative question. Make the reader NEED to continue.
-
-2. **THE BODY STRUCTURE**:
-   - Use clear, skimmable subheadings (## level)
-   - Keep paragraphs short (2-3 sentences max)
-   - Use bullet points for lists and key takeaways
-   - **Bold** the most important phrases so skimmers get value
-   - Include specific examples and numbers where possible
-
-3. **NARRATIVE PROGRESSION**: Each section should flow naturally to the next. Use transitions. Build from problem → insight → action.
-
-4. **GROUNDING**: All claims must be backed by the transcript context. Cite sources using [Source N] markers.
-
-5. **THE TAKEAWAY**: End with a specific, actionable conclusion. Not generic advice — something the reader can implement today.
-
-6. **LENGTH**: Target approximately 1,250 words. Be comprehensive but not bloated.
-
-7. **TONE**: Conversational but authoritative. Write like a smart friend sharing hard-won insights.
-
-Format the output as clean Markdown."""
+Output as clean Markdown."""
 
 
 class Ship30Agent:
@@ -56,17 +45,17 @@ class Ship30Agent:
     ) -> Dict[str, Any]:
         """Generate a Ship 30 for 30 essay."""
         
-        # Retrieve relevant context
+        # Retrieve relevant context (top 5 for token efficiency)
         citations = []
         context = ""
         if retrieval:
-            citations = retrieval.search(message, top_k=8)
+            citations = retrieval.search(message, top_k=5)
             context = retrieval.build_context(citations)
         
         messages = [{"role": "system", "content": SHIP30_SYSTEM_PROMPT}]
         
-        # Add relevant history
-        for msg in session_history[-5:]:
+        # Add relevant history (last 6 messages)
+        for msg in session_history[-6:]:
             messages.append({"role": msg["role"], "content": msg["content"]})
         
         user_content = f"""Write a Ship 30 for 30-style essay about the following topic.
@@ -85,7 +74,7 @@ Remember:
         messages.append({"role": "user", "content": user_content})
         
         response = await llm_client.complete(
-            messages, model=model, temperature=0.8, max_tokens=3000
+            messages, model=model, temperature=0.8, max_tokens=settings.max_tokens_essay
         )
         
         formatted_citations = []
@@ -116,7 +105,7 @@ Remember:
         citations = []
         context = ""
         if retrieval:
-            citations = retrieval.search(message, top_k=8)
+            citations = retrieval.search(message, top_k=5)
             context = retrieval.build_context(citations)
         
         if citations:
@@ -125,7 +114,7 @@ Remember:
         
         messages = [{"role": "system", "content": SHIP30_SYSTEM_PROMPT}]
         
-        for msg in session_history[-5:]:
+        for msg in session_history[-6:]:
             messages.append({"role": msg["role"], "content": msg["content"]})
         
         user_content = f"""Write a Ship 30 for 30-style essay about the following topic.
