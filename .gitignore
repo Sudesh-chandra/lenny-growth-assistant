@@ -50,6 +50,6 @@ htmlcov/
 *.pem
 *.key
 
-# Assignment files (not part of the project)
+# Assignment files
 Forward_Deployed_Engineer_Take_Home_Assignment.md
 Forward_Deployed_Engineer_Take_Home_Assignment.docx
