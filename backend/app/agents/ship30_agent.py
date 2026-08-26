@@ -86,7 +86,7 @@ Remember:
             "citations": formatted_citations,
             "has_artifact": "markdown",
             "artifact_data": {
-                "type": "markdown",
+                "artifact_type": "markdown",
                 "title": f"Essay: {message[:60]}",
                 "content": response,
             },

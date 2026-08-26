@@ -99,7 +99,7 @@ class OpenRouterClient:
     ) -> str:
         """Generate a completion via OpenRouter."""
         if not self.api_key:
-            raise RuntimeError("OpenRouter API key not configured")
+            raise RuntimeError("OpenRouter API key not configured. Set OPENROUTER_API_KEY in your .env file.")
         
         model = model or self.model
         
@@ -119,8 +119,16 @@ class OpenRouterClient:
             data = response.json()
             return data["choices"][0]["message"]["content"]
         except httpx.HTTPStatusError as e:
-            logger.error("openrouter_http_error", status=e.response.status_code, body=e.response.text[:200])
-            raise RuntimeError(f"OpenRouter API error ({e.response.status_code}): {e.response.text[:200]}")
+            status = e.response.status_code
+            body = e.response.text[:500]
+            if status == 402:
+                logger.error("openrouter_insufficient_credits", status=status, body=body)
+                raise RuntimeError(
+                    "OpenRouter: Insufficient credits (402 Payment Required). "
+                    "Please add credits at https://openrouter.ai/credits or switch to another model provider."
+                )
+            logger.error("openrouter_http_error", status=status, body=body)
+            raise RuntimeError(f"OpenRouter API error ({status}): {body}")
         except Exception as e:
             logger.error("openrouter_completion_failed", error=str(e), model=model)
             raise RuntimeError(f"OpenRouter completion failed: {str(e)}")
@@ -134,7 +142,7 @@ class OpenRouterClient:
     ) -> AsyncGenerator[str, None]:
         """Stream a completion via OpenRouter token by token."""
         if not self.api_key:
-            raise RuntimeError("OpenRouter API key not configured")
+            raise RuntimeError("OpenRouter API key not configured. Set OPENROUTER_API_KEY in your .env file.")
         
         model = model or self.model
         
@@ -153,6 +161,14 @@ class OpenRouterClient:
                     "stream": True,
                 },
             ) as response:
+                # Handle HTTP errors before attempting to read the stream
+                if response.status_code == 402:
+                    body = await response.aread()
+                    logger.error("openrouter_insufficient_credits", status=402, body=body.decode()[:500])
+                    raise RuntimeError(
+                        "OpenRouter: Insufficient credits (402 Payment Required). "
+                        "Please add credits at https://openrouter.ai/credits or switch to another model provider."
+                    )
                 response.raise_for_status()
                 
                 async for line in response.aiter_lines():
@@ -174,8 +190,19 @@ class OpenRouterClient:
                     except json.JSONDecodeError:
                         continue
         except httpx.HTTPStatusError as e:
-            logger.error("openrouter_stream_http_error", status=e.response.status_code)
-            raise RuntimeError(f"OpenRouter stream error ({e.response.status_code})")
+            status = e.response.status_code
+            body = e.response.text[:500]
+            if status == 402:
+                logger.error("openrouter_insufficient_credits", status=status, body=body)
+                raise RuntimeError(
+                    "OpenRouter: Insufficient credits (402 Payment Required). "
+                    "Please add credits at https://openrouter.ai/credits or switch to another model provider."
+                )
+            logger.error("openrouter_stream_http_error", status=status, body=body)
+            raise RuntimeError(f"OpenRouter stream error ({status}): {body}")
+        except RuntimeError:
+            # Re-raise RuntimeErrors (including 402) without wrapping
+            raise
         except Exception as e:
             logger.error("openrouter_stream_failed", error=str(e), model=model)
             raise RuntimeError(f"OpenRouter stream failed: {str(e)}")

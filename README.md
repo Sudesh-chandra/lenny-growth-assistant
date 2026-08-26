@@ -36,31 +36,31 @@ An AI-powered conversational web application that transforms Lenny's Podcast tra
 ## Product Screenshots
 
 ### Landing Page & Model Toggle
-![Landing Page](screenshots/01_landing_page_and_model_toggle.png)
+![Landing Page](docs/screenshots/01_landing_page_and_model_toggle.png)
 *Sidebar with session management, 4 provider options (Local/OpenRouter/OpenAI/Claude), and suggestion cards.*
 
 ### Grounded Q&A with Citations
-![Grounded Q&A](screenshots/02_grounded_qa_with_citations.png)
+![Grounded Q&A](docs/screenshots/02_grounded_qa_with_citations.png)
 *Structured response with skimmable headings, bullet points, and inline transcript citations.*
 
 ### Out-of-Scope Rejection
-![Out-of-Scope](screenshots/03_out_of_scope_rejection.png)
+![Out-of-Scope](docs/screenshots/03_out_of_scope_rejection.png)
 *Graceful rejection of off-topic queries without hallucination.*
 
 ### Ship 30 for 30 Essay
-![Ship 30 Essay](screenshots/04_ship_30_for_30_essay.png)
+![Ship 30 Essay](docs/screenshots/04_ship_30_for_30_essay.png)
 *Dedicated essay generation with bold hook, skimmable headings, bullet points, and actionable takeaways.*
 
 ### Artifact Viewer — Preview Tab
-![Artifact Preview](screenshots/05_artifact_viewer_preview.png)
+![Artifact Preview](docs/screenshots/05_artifact_viewer_preview.png)
 *Dual-pane layout with sandboxed iframe rendering of HTML/CSS artifacts.*
 
 ### Artifact Viewer — Code Tab
-![Artifact Code](screenshots/06_artifact_viewer_code_tab.png)
+![Artifact Code](docs/screenshots/06_artifact_viewer_code_tab.png)
 *Syntax-highlighted source code with copy button.*
 
 ### Session Persistence
-![Session Persistence](screenshots/07_session_persistence.png)
+![Session Persistence](docs/screenshots/07_session_persistence.png)
 *Conversation history persists in sidebar across page reloads via PostgreSQL.*
 
 ## Prerequisites

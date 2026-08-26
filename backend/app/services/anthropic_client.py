@@ -71,7 +71,7 @@ class AnthropicClient:
     ) -> str:
         """Generate a completion from Anthropic."""
         if not self.api_key:
-            raise RuntimeError("Anthropic API key not configured")
+            raise RuntimeError("Anthropic API key not configured. Set ANTHROPIC_API_KEY in your .env file.")
         
         model = model or self.model
         system_msg, anthropic_messages = self._convert_messages(messages)
@@ -104,7 +104,7 @@ class AnthropicClient:
     ) -> AsyncGenerator[str, None]:
         """Stream a completion from Anthropic token by token."""
         if not self.api_key:
-            raise RuntimeError("Anthropic API key not configured")
+            raise RuntimeError("Anthropic API key not configured. Set ANTHROPIC_API_KEY in your .env file.")
         
         model = model or self.model
         system_msg, anthropic_messages = self._convert_messages(messages)

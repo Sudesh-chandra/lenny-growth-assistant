@@ -56,7 +56,7 @@ class OpenAIClient:
     ) -> str:
         """Generate a completion from OpenAI."""
         if not self.api_key:
-            raise RuntimeError("OpenAI API key not configured")
+            raise RuntimeError("OpenAI API key not configured. Set OPENAI_API_KEY in your .env file.")
         
         model = model or self.model
         
@@ -84,7 +84,7 @@ class OpenAIClient:
     ) -> AsyncGenerator[str, None]:
         """Stream a completion from OpenAI token by token."""
         if not self.api_key:
-            raise RuntimeError("OpenAI API key not configured")
+            raise RuntimeError("OpenAI API key not configured. Set OPENAI_API_KEY in your .env file.")
         
         model = model or self.model
         
