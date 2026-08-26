@@ -4,6 +4,7 @@ import type { Session, Message, Citation, Artifact, ModelInfo } from './lib/type
 import Sidebar from './components/Sidebar';
 import ChatView from './components/ChatView';
 import ArtifactViewer from './components/ArtifactViewer';
+import { X, AlertCircle } from 'lucide-react';
 
 export default function App() {
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -20,13 +21,11 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // Load sessions on mount
   useEffect(() => {
     loadSessions();
     loadModels();
   }, []);
 
-  // Load messages when session changes
   useEffect(() => {
     if (activeSession) {
       loadMessages(activeSession.id);
@@ -95,10 +94,13 @@ export default function App() {
     }
   }, [activeSession, handleNewChat]);
 
+  const handleOpenArtifact = useCallback(() => {
+    setShowArtifact(true);
+  }, []);
+
   const handleSendMessage = useCallback(async (content: string) => {
     setError(null);
-    
-    // Add user message to UI immediately
+
     const userMessage: Message = {
       id: `temp-${Date.now()}`,
       session_id: activeSession?.id || '',
@@ -162,7 +164,6 @@ export default function App() {
               setError(event.data);
               break;
             case 'done':
-              // Finalize the streaming message
               const assistantMessage: Message = {
                 id: `msg-${Date.now()}`,
                 session_id: activeSession?.id || '',
@@ -192,20 +193,19 @@ export default function App() {
     }
   }, [activeSession, activeProvider, activeModel]);
 
-  // Use refs to access latest state in callbacks
   const streamingContentRef = useRef(streamingContent);
   const streamingCitationsRef = useRef(streamingCitations);
-  
+
   useEffect(() => {
     streamingContentRef.current = streamingContent;
   }, [streamingContent]);
-  
+
   useEffect(() => {
     streamingCitationsRef.current = streamingCitations;
   }, [streamingCitations]);
 
   return (
-    <div className="flex h-screen bg-slate-50">
+    <div className="flex h-screen bg-surface-0 overflow-hidden">
       {/* Sidebar */}
       <Sidebar
         sessions={sessions}
@@ -223,15 +223,23 @@ export default function App() {
       />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 relative">
         {/* Error Toast */}
         {error && (
-          <div className="absolute top-4 right-4 z-50 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg shadow-lg animate-fade-in">
-            <div className="flex items-center gap-2">
-              <span className="text-sm">{error}</span>
-              <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600">
-                ✕
-              </button>
+          <div className="absolute top-4 right-4 z-50 animate-fade-in">
+            <div className="glass rounded-xl px-4 py-3 shadow-glass border border-accent-rose/20 max-w-sm">
+              <div className="flex items-start gap-2.5">
+                <AlertCircle size={16} className="text-accent-rose shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] text-slate-200">{error}</p>
+                </div>
+                <button
+                  onClick={() => setError(null)}
+                  className="text-slate-500 hover:text-slate-300 transition-colors"
+                >
+                  <X size={14} />
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -247,6 +255,10 @@ export default function App() {
               isStreaming={isStreaming}
               onSendMessage={handleSendMessage}
               sessionTitle={activeSession?.title || 'New Chat'}
+              activeProvider={activeProvider}
+              activeModel={activeModel}
+              artifact={artifact}
+              onOpenArtifact={handleOpenArtifact}
             />
           </div>
 

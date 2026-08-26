@@ -106,7 +106,7 @@ class AgentRouter:
         except Exception as e:
             logger.error("agent_routing_failed", error=str(e), skill=selected_skill)
             return {
-                "content": f"I encountered an error processing your request. Please try again.\n\nError: {str(e)}",
+                "content": "I encountered an error processing your request. Please try again. If the issue persists, start a new chat.",
                 "citations": [],
                 "has_artifact": None,
                 "artifact_data": None,
@@ -161,5 +161,5 @@ class AgentRouter:
             logger.error("stream_routing_failed", error=str(e), skill=selected_skill)
             yield {
                 "type": "error",
-                "data": f"Error: {str(e)}",
+                "data": "An internal error occurred. Please try again or start a new chat.",
             }

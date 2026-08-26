@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     # Application
     app_name: str = "Lenny Growth Assistant"
     app_env: str = "development"
-    debug: bool = True
+    debug: bool = False
     secret_key: str = "change-me-in-production"
     
     # Database

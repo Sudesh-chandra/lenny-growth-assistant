@@ -263,7 +263,7 @@ async def chat_stream(body: ChatRequest, db: AsyncSession = Depends(get_db)):
                     break
         except Exception as e:
             logger.error("stream_error", error=str(e))
-            yield f"data: {json.dumps({'type': 'error', 'data': str(e)})}\n\n"
+            yield f"data: {json.dumps({'type': 'error', 'data': 'An internal error occurred. Please try again.'})}\n\n"
         
         # Save assistant message to DB using a fresh session
         async with async_session_maker() as save_session:
