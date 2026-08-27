@@ -55,32 +55,32 @@ An AI-powered conversational web application that transforms Lenny's Podcast tra
 
 > **Note**: Screenshots are captured automatically via Playwright E2E tests. Run `python capture_screenshots.py` to regenerate.
 
-### 1. Grounded Q&A with Citations
-![Grounded Q&A](docs/screenshots/01_grounded_qa_citations.png)
+### 1. Landing Page & Chat Interface
+![Landing Page](docs/screenshots/01_landing_page.png)
+*Dark-themed UI with glassmorphism sidebar, session history, model selector, and branded Lenny avatar. Clean, professional interface ready for queries.*
+
+### 2. Grounded Q&A with Citations
+![Grounded Q&A](docs/screenshots/02_grounded_qa.png)
 *Structured response with skimmable headings, bullet points, and inline transcript citations. Responses are grounded exclusively in podcast transcript context with specific guest attribution.*
 
-### 2. B2B Growth Strategy & Loops
-![Growth Loops](docs/screenshots/02_growth_loops_strategy.png)
-*Detailed explanation of self-reinforcing growth loops vs traditional funnels, citing specific B2B companies and strategies from Lenny's guests.*
-
 ### 3. Out-of-Scope Zero-Hallucination Rejection
-![Out-of-Scope](docs/screenshots/03_out_of_scope_rejection.png)
+![Out-of-Scope](docs/screenshots/03_out_of_scope.png)
 *Graceful rejection of off-topic queries without hallucination. The agent politely states the information is not in Lenny's transcripts and redirects to product management topics.*
 
 ### 4. Ship 30 for 30 Essay
-![Ship 30 Essay](docs/screenshots/04_ship_30_for_30_essay.png)
+![Ship 30 Essay](docs/screenshots/04_ship30_essay.png)
 *~1,250-word magazine-grade essay with bold hook, skimmable headings, bullet points, selective bolding, and actionable takeaways. Dedicated content generation skill.*
 
 ### 5. Artifact Viewer — Preview Tab
-![Artifact Preview](docs/screenshots/05_artifact_viewer_preview.png)
+![Artifact Preview](docs/screenshots/05_artifact_preview.png)
 *Dual-pane layout with sandboxed iframe rendering of interactive HTML/CSS artifacts. Sandboxed with `allow-scripts` only (no `allow-same-origin`) for XSS prevention. Live widget in Preview tab.*
 
 ### 6. Artifact Viewer — Code Tab
-![Artifact Code](docs/screenshots/06_artifact_viewer_code.png)
+![Artifact Code](docs/screenshots/06_artifact_viewer_code_tab.png)
 *Syntax-highlighted source code with copy button. Raw code never leaks into chat bubble—only shown in dedicated Code tab.*
 
 ### 7. Model Toggle & Provider Switching
-![Model Toggle](docs/screenshots/07_model_toggle_state.png)
+![Model Toggle](docs/screenshots/07_model_toggle.png)
 *Dynamic model switching between Local (Ollama), OpenRouter, OpenAI, and Anthropic without backend restart. Active model indicator with friendly error toasts.*
 
 ### 8. Session History & PostgreSQL Persistence
@@ -95,6 +95,8 @@ An AI-powered conversational web application that transforms Lenny's Podcast tra
 - **PostgreSQL 16** (if not using Docker)
 
 ## Quick Start (Docker — One Command)
+
+> ⚠️ **Note**: Docker build may take 10-15 minutes on first run due to ML library compilation (ChromaDB, sentence-transformers, etc.). For faster setup, use the [Manual Setup](#manual-setup-without-docker) approach below (2-3 minutes).
 
 ```bash
 # 1. Clone the repository
@@ -115,6 +117,32 @@ docker compose up --build
 # Frontend: http://localhost
 # Backend API: http://localhost:8000
 # API docs: http://localhost:8000/docs
+```
+
+## 🚀 Recommended: Manual Setup (Faster — 2-3 minutes)
+
+For development and testing, the manual approach is **significantly faster** than Docker:
+
+```bash
+# 1. Clone and setup backend
+git clone <your-repo-url>
+cd lenny-growth-assistant/backend
+python -m venv venv
+venn\Scripts\activate  # Windows
+pip install -r requirements.txt
+
+# 2. Ingest transcripts (one-time, ~30 seconds)
+python -m scripts.ingest
+
+# 3. Start backend
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# 4. In another terminal, start frontend
+cd ../frontend
+npm install
+npm run dev
+
+# 5. Open http://localhost:5173
 ```
 
 ## Manual Setup (Without Docker)
