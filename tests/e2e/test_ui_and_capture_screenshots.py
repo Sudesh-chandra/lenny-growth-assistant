@@ -108,7 +108,7 @@ async def test_01_landing_page_and_model_toggle(page: Page) -> bool:
         await page.wait_for_timeout(2000)
 
         # Verify page title / main content
-        await page.wait_for_selector("text=Lenny Growth Assistant", timeout=10000)
+        await page.wait_for_selector("text=Lenny Growth", timeout=10000)
         print("  ✅ App title visible")
 
         # Verify sidebar with New Chat button

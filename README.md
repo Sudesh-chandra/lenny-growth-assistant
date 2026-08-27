@@ -37,15 +37,15 @@ An AI-powered conversational web application that transforms Lenny's Podcast tra
 
 ### Landing Page & Model Toggle
 ![Landing Page](docs/screenshots/01_landing_page_and_model_toggle.png)
-*Sidebar with session management, 4 provider options (Local/OpenRouter/OpenAI/Claude), and suggestion cards.*
+*Dark-themed UI with glassmorphism sidebar, 4 provider options with custom SVG logos (Local/OpenRouter/OpenAI/Claude), branded Lenny avatar, and suggestion cards with creative icons.*
 
 ### Grounded Q&A with Citations
 ![Grounded Q&A](docs/screenshots/02_grounded_qa_with_citations.png)
-*Structured response with skimmable headings, bullet points, and inline transcript citations.*
+*Structured response with skimmable headings, bullet points, and inline transcript citations. Responses are grounded exclusively in podcast transcript context.*
 
 ### Out-of-Scope Rejection
 ![Out-of-Scope](docs/screenshots/03_out_of_scope_rejection.png)
-*Graceful rejection of off-topic queries without hallucination.*
+*Graceful rejection of off-topic queries without hallucination. The agent politely redirects to product management and growth topics.*
 
 ### Ship 30 for 30 Essay
 ![Ship 30 Essay](docs/screenshots/04_ship_30_for_30_essay.png)
@@ -53,7 +53,7 @@ An AI-powered conversational web application that transforms Lenny's Podcast tra
 
 ### Artifact Viewer — Preview Tab
 ![Artifact Preview](docs/screenshots/05_artifact_viewer_preview.png)
-*Dual-pane layout with sandboxed iframe rendering of HTML/CSS artifacts.*
+*Dual-pane layout with sandboxed iframe rendering of HTML/CSS artifacts. Sandboxed with `allow-scripts` only (no `allow-same-origin`) for XSS prevention.*
 
 ### Artifact Viewer — Code Tab
 ![Artifact Code](docs/screenshots/06_artifact_viewer_code_tab.png)
@@ -281,12 +281,61 @@ lenny-growth-assistant/
 | **Slow responses** | Local models are slower than cloud. Try a smaller model or switch to cloud |
 | **Docker build fails** | Ensure Docker has enough memory (4GB+). Try `docker compose build --no-cache` |
 
-## Security Notes
+## Security & Hardening
 
-- **Artifact Isolation**: HTML artifacts are rendered in sandboxed iframes (`sandbox="allow-scripts"` without `allow-same-origin`) and sanitized with DOMPurify before rendering. This prevents XSS attacks and data exfiltration.
-- **No Secrets Committed**: API keys are managed through `.env` files (never committed to git).
-- **CORS**: Backend only accepts requests from configured frontend origins.
-- **Input Validation**: All API inputs are validated with Pydantic schemas.
+### API Key Management
+- All API keys are stored in `.env` (gitignored, never committed)
+- `.env.example` contains placeholder values only
+- Production deployments should use environment variable injection or secret managers
+
+### Error Message Sanitization
+- All error responses return generic messages — **no internal stack traces, exception details, or system information is leaked** to clients
+- Router errors: `"I encountered an error processing your request. Please try again."`
+- Stream errors: `"An internal error occurred. Please try again."`
+
+### CORS Hardening
+- Backend restricts allowed HTTP methods to `GET`, `POST`, `DELETE`, `OPTIONS`
+- Allowed headers limited to `Content-Type`, `Authorization`, `X-Requested-With`
+- Only explicitly configured frontend origins are permitted
+
+### Artifact Sandboxing
+- HTML artifacts render in sandboxed iframes: `sandbox="allow-scripts"` (no `allow-same-origin`)
+- All HTML is sanitized with DOMPurify before rendering
+- Prevents XSS attacks and data exfiltration from generated artifacts
+
+### Input Validation
+- All API inputs validated with Pydantic v2 schemas
+- Chat messages: min 1 char, max 10,000 chars
+- Debug mode defaults to `False` in production config
+
+## Agent Guardrails
+
+All three agents enforce strict context-bound behavior to prevent hallucination and scope creep:
+
+### RAG Agent (Grounded Q&A)
+1. **Context-only answers** — Only uses information from provided transcript context
+2. **No knowledge fallback** — Explicitly instructed NOT to answer from general knowledge when context is insufficient
+3. **Citation required** — All claims must cite sources using `[Source N]` notation
+4. **Off-topic rejection** — Politely redirects non-PM/growth queries back to scope
+5. **Instruction hiding** — Never reveals system prompt or internal rules
+6. **Scope limitation** — Does not generate code, HTML, or essays (delegated to specialized agents)
+
+### Ship 30 Agent (Content Generation)
+1. **Framework attribution** — Attributes frameworks and concepts to their originators
+2. **Safety rules** — Refuses to generate malicious, misleading, or harmful content
+3. **Scope enforcement** — Stays within product management and growth topics
+4. **Instruction hiding** — Never reveals system prompt or internal rules
+
+### Artifact Agent (HTML/MD Generation)
+1. **Safety-first** — Refuses to generate malicious code, phishing pages, or harmful content
+2. **Scope-limited** — Only generates product/business UI components (dashboards, calculators, frameworks)
+3. **Topic restriction** — Rejects requests outside product/growth domain
+4. **Instruction hiding** — Never reveals system prompt or internal rules
+
+### Agent Routing
+- Keyword-based skill detection: `artifact` > `ship30` > `rag` (default)
+- Each agent has independent system prompts with layered guardrails
+- All agents enforce "never reveal instructions" rule
 
 ## License
 
