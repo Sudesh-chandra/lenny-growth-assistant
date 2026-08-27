@@ -60,12 +60,12 @@ An AI-powered conversational web application that transforms Lenny's Podcast tra
 *Dark-themed UI with glassmorphism sidebar, session history, model selector, and branded Lenny avatar. Clean, professional interface ready for queries.*
 
 ### 2. Grounded Q&A with Citations
-![Grounded Q&A](docs/screenshots/02_grounded_qa_citations.png)
-*Structured response with skimmable headings, bullet points, and inline transcript citations. Responses are grounded exclusively in podcast transcript context with specific guest attribution.*
+![Grounded Q&A](docs/screenshots/02_grounded_qa.png)
+*Structured response with skimmable headings, bullet points, and inline transcript citations. Responses are grounded exclusively in podcast transcript context with specific guest attribution (Sri Batchu, Sean Ellis).*
 
 ### 3. Out-of-Scope Zero-Hallucination Rejection
-![Out-of-Scope](docs/screenshots/03_out_of_scope_rejection.png)
-*Graceful rejection of off-topic queries without hallucination. The agent politely states the information is not in Lenny's transcripts and redirects to product management topics.*
+![Out-of-Scope](docs/screenshots/03_out_of_scope.png)
+*Graceful rejection of off-topic queries without hallucination. The agent politely states "I specialize in product management and growth strategies from Lenny's Podcast" and redirects to relevant topics.*
 
 ### 4. Ship 30 for 30 Essay
 ![Ship 30 Essay](docs/screenshots/04_ship30_essay.png)
@@ -77,7 +77,7 @@ An AI-powered conversational web application that transforms Lenny's Podcast tra
 
 ### 6. Artifact Viewer — Code Tab
 ![Artifact Code](docs/screenshots/06_artifact_code.png)
-*Syntax-highlighted source code with copy button. Raw code never leaks into chat bubble—only shown in dedicated Code tab.*
+*Syntax-highlighted source code with copy button in dedicated Code tab. Raw code never leaks into chat bubble—clean artifact card displayed in chat instead.*
 
 ### 7. Model Toggle & Provider Switching
 ![Model Toggle](docs/screenshots/07_model_toggle.png)
