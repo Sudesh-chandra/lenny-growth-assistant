@@ -60,11 +60,11 @@ An AI-powered conversational web application that transforms Lenny's Podcast tra
 *Dark-themed UI with glassmorphism sidebar, session history, model selector, and branded Lenny avatar. Clean, professional interface ready for queries.*
 
 ### 2. Grounded Q&A with Citations
-![Grounded Q&A](docs/screenshots/02_grounded_qa.png)
+![Grounded Q&A](docs/screenshots/02_grounded_qa_citations.png)
 *Structured response with skimmable headings, bullet points, and inline transcript citations. Responses are grounded exclusively in podcast transcript context with specific guest attribution.*
 
 ### 3. Out-of-Scope Zero-Hallucination Rejection
-![Out-of-Scope](docs/screenshots/03_out_of_scope.png)
+![Out-of-Scope](docs/screenshots/03_out_of_scope_rejection.png)
 *Graceful rejection of off-topic queries without hallucination. The agent politely states the information is not in Lenny's transcripts and redirects to product management topics.*
 
 ### 4. Ship 30 for 30 Essay
@@ -76,7 +76,7 @@ An AI-powered conversational web application that transforms Lenny's Podcast tra
 *Dual-pane layout with sandboxed iframe rendering of interactive HTML/CSS artifacts. Sandboxed with `allow-scripts` only (no `allow-same-origin`) for XSS prevention. Live widget in Preview tab.*
 
 ### 6. Artifact Viewer — Code Tab
-![Artifact Code](docs/screenshots/06_artifact_viewer_code_tab.png)
+![Artifact Code](docs/screenshots/06_artifact_code.png)
 *Syntax-highlighted source code with copy button. Raw code never leaks into chat bubble—only shown in dedicated Code tab.*
 
 ### 7. Model Toggle & Provider Switching
