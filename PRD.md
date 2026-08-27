@@ -227,7 +227,412 @@ Specific use cases:
 
 ---
 
-## 6. Reranking in RAG Pipeline
+## 6. User Flows
+
+### Flow 1: First-Time User (Discovery)
+
+```
+User lands on homepage
+  ↓
+Sees welcome screen with starter cards
+  ↓
+Clicks starter card OR types first question
+  ↓
+System creates new session (auto-generated title)
+  ↓
+Query routed to appropriate agent (RAG/artifact/essay)
+  ↓
+Response streams with citations (if RAG)
+  ↓
+User sees value → continues conversation
+```
+
+**Success Criteria**: User gets grounded, cited response within 3 seconds
+
+### Flow 2: Returning User (Session Resumption)
+
+```
+User opens app
+  ↓
+Sidebar shows previous sessions (last 20)
+  ↓
+User clicks on previous session
+  ↓
+Chat history loads from PostgreSQL
+  ↓
+User continues conversation (context preserved)
+  ↓
+New messages added to existing session
+```
+
+**Success Criteria**: Session loads in <1s, conversation context preserved
+
+### Flow 3: RAG Q&A (Primary Use Case)
+
+```
+User asks: "How do top companies measure PMF?"
+  ↓
+Router detects RAG skill (no artifact/essay keywords)
+  ↓
+Retrieval service:
+  1. Vector search: top-20 candidates (~10ms)
+  2. Reranking: cross-encoder scores top-5 (~200ms)
+  3. Filter by relevance threshold (≥0.5)
+  ↓
+RAG agent builds prompt with context + history
+  ↓
+LLM generates response with [Source N] citations
+  ↓
+Response streams to frontend
+  ↓
+Citations displayed below response
+  ↓
+User clicks citation → sees source details
+```
+
+**Success Criteria**: Response includes ≥3 citations with relevance >0.7
+
+### Flow 4: Artifact Generation
+
+```
+User asks: "Write a PRD for a referral program"
+  ↓
+Router detects artifact skill ("write a PRD" keyword)
+  ↓
+Artifact agent generates structured HTML/Markdown
+  ↓
+Response includes artifact code block
+  ↓
+Frontend renders in sandboxed iframe
+  ↓
+User can interact with artifact (if interactive)
+  ↓
+User can copy code or download artifact
+```
+
+**Success Criteria**: Artifact renders without errors, user can interact/copy
+
+### Flow 5: Model Switching
+
+```
+User clicks model dropdown in sidebar
+  ↓
+Selects different provider (e.g., OpenAI → Anthropic)
+  ↓
+Frontend sends new provider in next request
+  ↓
+Backend uses selected provider for LLM call
+  ↓
+If provider fails → automatic fallback to next provider
+  ↓
+Response generated with fallback provider
+  ↓
+UI shows which provider was actually used
+```
+
+**Success Criteria**: Model switch works, fallback is transparent to user
+
+### Flow 6: Error Handling (Provider Failure)
+
+```
+User sends query
+  ↓
+Primary provider (OpenRouter) fails (auth error, timeout)
+  ↓
+Backend tries fallback provider (Anthropic)
+  ↓
+If Anthropic succeeds → response generated
+  ↓
+If Anthropic fails → tries OpenAI
+  ↓
+If OpenAI fails → tries Ollama (local)
+  ↓
+If all fail → error message to user
+  ↓
+User can retry or switch provider manually
+```
+
+**Success Criteria**: User gets response despite provider failure (99.5% uptime)
+
+---
+
+## 7. Acceptance Criteria
+
+### Epic 1: RAG-Grounded Q&A
+
+**Story 1.1**: As a user, I want to ask product/growth questions and get cited answers so I can verify sources.
+
+**Acceptance Criteria**:
+- [ ] Query returns response within 3 seconds (P95)
+- [ ] Response includes ≥3 citations (when context available)
+- [ ] Each citation shows: source episode, guest name, text snippet, relevance score
+- [ ] Citations are clickable and show full source details
+- [ ] Response uses [Source N] notation matching citation list
+- [ ] If no context found, response states: "I don't have enough information..."
+- [ ] Hallucination rate <5% (measured by manual audit of 50 responses)
+
+**Story 1.2**: As a user, I want the system to retrieve highly relevant chunks so I get precise answers.
+
+**Acceptance Criteria**:
+- [ ] Vector search retrieves top-20 candidates
+- [ ] Reranking scores and returns top-5 chunks
+- [ ] Retrieval precision@5 ≥0.75 (measured by 50 test queries)
+- [ ] Reranking adds <300ms latency (P95)
+- [ ] If reranking fails, falls back to vector search gracefully
+
+### Epic 2: Multi-Provider LLM
+
+**Story 2.1**: As a user, I want the system to work even if one LLM provider fails so I always get answers.
+
+**Acceptance Criteria**:
+- [ ] System supports 4 providers: OpenRouter, Anthropic, OpenAI, Ollama
+- [ ] Automatic fallback: OpenRouter → Anthropic → OpenAI → Ollama
+- [ ] Fallback is transparent (user doesn't see errors)
+- [ ] UI shows which provider was actually used
+- [ ] Uptime ≥99.5% (measured over 30 days)
+- [ ] Cost per query <$0.03 average
+
+**Story 2.2**: As a user, I want to switch LLM providers manually so I can choose my preferred model.
+
+**Acceptance Criteria**:
+- [ ] Model dropdown in sidebar shows all available providers
+- [ ] User can select provider before sending query
+- [ ] Selected provider is used for next query
+- [ ] If selected provider fails, fallback still works
+- [ ] Provider preference persists for session
+
+### Epic 3: Artifact Generation
+
+**Story 3.1**: As a user, I want to generate PRDs, essays, and HTML tools so I can use them in my work.
+
+**Acceptance Criteria**:
+- [ ] Router detects artifact keywords ("write a PRD", "create an essay", etc.)
+- [ ] Artifact agent generates structured HTML/Markdown
+- [ ] Artifacts render in sandboxed iframe (no XSS vulnerabilities)
+- [ ] User can copy artifact code with one click
+- [ ] User can download artifact as file
+- [ ] Artifacts are self-contained (no external dependencies)
+
+### Epic 4: Session Management
+
+**Story 4.1**: As a user, I want to save my conversations so I can return to them later.
+
+**Acceptance Criteria**:
+- [ ] New session created automatically on first message
+- [ ] Session title auto-generated from first query (first 50 chars)
+- [ ] Session persists in PostgreSQL
+- [ ] Sidebar shows last 20 sessions
+- [ ] User can click session to resume conversation
+- [ ] Session loads in <1s
+- [ ] User can delete session (and associated data)
+
+**Story 4.2**: As a user, I want to see my conversation history so I can continue where I left off.
+
+**Acceptance Criteria**:
+- [ ] Chat history loads when session selected
+- [ ] Messages display in correct order (user + assistant)
+- [ ] Citations preserved in history
+- [ ] Artifacts preserved in history
+- [ ] Conversation context preserved (last 6 messages for RAG)
+
+### Epic 5: UI/UX
+
+**Story 5.1**: As a user, I want a clean, professional interface so I can focus on content.
+
+**Acceptance Criteria**:
+- [ ] Dark mode UI with classic, minimalist design
+- [ ] No redundant badges or clutter
+- [ ] Official brand logos for providers (OpenAI, Anthropic, Ollama, OpenRouter)
+- [ ] Streaming responses (tokens appear as they generate)
+- [ ] Responsive design (works on desktop, tablet, mobile)
+- [ ] Accessibility: WCAG 2.1 AA compliant (keyboard navigation, screen reader support)
+
+**Story 5.2**: As a user, I want to see citations clearly so I can verify sources.
+
+**Acceptance Criteria**:
+- [ ] Citations displayed below response
+- [ ] Each citation shows: source, guest, snippet, relevance score
+- [ ] Citations are clickable (expand to show full details)
+- [ ] Citation [Source N] matches context block numbering
+- [ ] Citation click-through rate ≥30%
+
+---
+
+## 8. Implementation Plan
+
+### Phase 1: Foundation (Week 1-2)
+
+**Sprint 1: Backend Setup**
+- [x] FastAPI project structure
+- [x] PostgreSQL database schema (sessions, messages)
+- [x] ChromaDB vector store setup
+- [x] Transcript ingestion script (303 episodes → 30,499 chunks)
+- [x] Basic health endpoint
+
+**Deliverables**:
+- Backend runs on port 8000
+- ChromaDB contains 30,499 chunks
+- PostgreSQL contains session/message tables
+- Health endpoint returns status
+
+**Sprint 2: RAG Pipeline**
+- [x] Vector search service (ChromaDB)
+- [x] Retrieval service with citations
+- [x] RAG agent with strict system prompt
+- [x] Multi-provider LLM client (OpenRouter, Anthropic, OpenAI, Ollama)
+- [x] Chat endpoint with streaming (SSE)
+
+**Deliverables**:
+- User can ask questions and get cited answers
+- Streaming responses work
+- Multi-provider fallback works
+
+### Phase 2: Quality & Resilience (Week 3-4)
+
+**Sprint 3: Reranking**
+- [x] Cross-encoder reranking service
+- [x] Two-stage retrieval (vector → rerank)
+- [x] Blended scoring (70% reranker + 30% vector)
+- [x] Graceful degradation (fallback to vector search)
+- [x] Reranking metrics logging
+
+**Deliverables**:
+- Retrieval precision improves by 25%
+- Latency increases by <300ms
+- Reranking can be disabled via config
+
+**Sprint 4: Skill Routing & Artifacts**
+- [x] Router agent (detects query type)
+- [x] Artifact agent (HTML/Markdown generation)
+- [x] Ship 30 agent (essay generation)
+- [x] Sandboxed artifact rendering (iframe)
+- [x] Artifact download/copy functionality
+
+**Deliverables**:
+- Router detects RAG vs. artifact vs. essay queries
+- Artifacts render safely in sandbox
+- Users can copy/download artifacts
+
+### Phase 3: Frontend & UX (Week 5-6)
+
+**Sprint 5: React Frontend**
+- [x] Vite + React + TypeScript setup
+- [x] Tailwind CSS design system
+- [x] ChatView component (streaming responses)
+- [x] Sidebar component (session management)
+- [x] ProviderLogos component (official brand SVGs)
+- [x] ArtifactRenderer component (sandboxed iframe)
+
+**Deliverables**:
+- Frontend runs on port 5173
+- Clean, minimalist dark mode UI
+- Streaming responses work
+- Artifacts render safely
+
+**Sprint 6: Session Management**
+- [x] Session creation (auto on first message)
+- [x] Session persistence (PostgreSQL)
+- [x] Session list (last 20 in sidebar)
+- [x] Session resumption (click to load history)
+- [x] Session deletion
+- [x] Auto-generated session titles
+
+**Deliverables**:
+- Sessions persist across browser refresh
+- Users can resume previous conversations
+- Session history loads in <1s
+
+### Phase 4: Polish & Testing (Week 7-8)
+
+**Sprint 7: UI/UX Refinements**
+- [x] Remove header bar (clean canvas)
+- [x] Fix sidebar overflow (scrollable session list)
+- [x] Remove duplicate model name from footer
+- [x] Replace generic icons with official brand SVGs
+- [x] Update color palette (classic dark theme)
+- [x] Improve starter cards (understated design)
+
+**Deliverables**:
+- Clean, professional UI
+- No visual bugs or clutter
+- Official brand logos throughout
+
+**Sprint 8: Testing & Documentation**
+- [x] Unit tests (28 passing)
+- [x] Integration tests (manual)
+- [x] PRD documentation
+- [x] Architecture documentation
+- [x] Design documentation
+- [x] Agent transcripts (coding logs)
+- [x] Test plan (automated + manual)
+
+**Deliverables**:
+- All tests pass
+- Comprehensive documentation
+- Ready for demo/portfolio
+
+### Phase 5: Deployment & Monitoring (Week 9-10)
+
+**Sprint 9: Deployment**
+- [ ] Docker Compose setup
+- [ ] Environment configuration (.env)
+- [ ] Database migrations (Alembic)
+- [ ] Production build (frontend + backend)
+- [ ] Deployment to cloud (AWS/GCP/Heroku)
+
+**Deliverables**:
+- System runs in Docker containers
+- Environment variables configured
+- Database migrations work
+- System accessible via public URL
+
+**Sprint 10: Monitoring & Iteration**
+- [ ] Structured logging (JSON format)
+- [ ] Metrics collection (latency, cost, quality)
+- [ ] Error tracking (Sentry or similar)
+- [ ] User feedback collection
+- [ ] Performance optimization
+
+**Deliverables**:
+- Logs show query latency, reranking metrics, cost
+- Errors tracked and alerted
+- User feedback collected
+- System optimized for production
+
+### Timeline Summary
+
+| Phase | Duration | Key Deliverables |
+|-------|----------|------------------|
+| Phase 1: Foundation | Week 1-2 | Backend, ChromaDB, basic RAG |
+| Phase 2: Quality | Week 3-4 | Reranking, skill routing, artifacts |
+| Phase 3: Frontend | Week 5-6 | React UI, session management |
+| Phase 4: Polish | Week 7-8 | UI/UX refinements, testing, docs |
+| Phase 5: Deployment | Week 9-10 | Docker, monitoring, production |
+
+**Total**: 10 weeks (2.5 months) for production-ready system
+
+### Resource Requirements
+
+**Team**:
+- 1 Full-stack engineer (implementation)
+- 1 UI/UX designer (part-time, sprint 5-7)
+- 1 QA engineer (part-time, sprint 8)
+
+**Infrastructure**:
+- PostgreSQL database (managed or self-hosted)
+- ChromaDB vector store (self-hosted)
+- LLM API keys (OpenRouter, Anthropic, OpenAI)
+- Ollama (local, optional)
+- Docker host (for deployment)
+
+**Cost**:
+- LLM APIs: ~$0.03/query × 1000 queries/month = $30/month
+- Infrastructure: ~$50/month (PostgreSQL, Docker host)
+- **Total**: ~$80/month for 1000 users
+
+---
+
+## 9. Reranking in RAG Pipeline
 
 ### Why Reranking is Critical
 
@@ -289,7 +694,7 @@ See `backend/app/services/reranker.py` for full implementation.
 
 ---
 
-## 7. Conclusion
+## 10. Conclusion
 
 The Lenny Growth Assistant is a **focused, high-value tool** that solves a real pain point for product managers and growth professionals. By combining:
 
