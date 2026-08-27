@@ -13,10 +13,10 @@ export default {
       },
       colors: {
         surface: {
-          0: '#090d16',
-          1: '#0f172a',
-          2: '#1e293b',
-          3: '#334155',
+          0: '#0a0d14',
+          1: '#111622',
+          2: '#1a1f2e',
+          3: '#252b3b',
         },
         accent: {
           indigo: '#6366f1',
@@ -62,10 +62,10 @@ export default {
         },
       },
       boxShadow: {
-        'glow-sm': '0 0 15px rgba(99, 102, 241, 0.15)',
-        'glow': '0 0 30px rgba(99, 102, 241, 0.2)',
-        'glow-lg': '0 0 60px rgba(99, 102, 241, 0.25)',
-        'glass': '0 8px 32px rgba(0, 0, 0, 0.3)',
+        'glow-sm': '0 0 20px rgba(99, 102, 241, 0.08)',
+        'glow': '0 0 30px rgba(99, 102, 241, 0.12)',
+        'glow-lg': '0 0 60px rgba(99, 102, 241, 0.15)',
+        'glass': '0 8px 32px rgba(0, 0, 0, 0.4)',
       },
       backdropBlur: {
         xs: '2px',

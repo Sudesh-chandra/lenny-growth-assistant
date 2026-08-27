@@ -98,13 +98,13 @@ export default function Sidebar({
             <button
               onClick={onNewChat}
               className="group w-full flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
-                bg-gradient-to-r from-accent-indigo/90 to-accent-violet/90 hover:from-accent-indigo hover:to-accent-violet
-                text-white shadow-glow-sm hover:shadow-glow hover:-translate-y-0.5"
+                bg-surface-2 hover:bg-surface-3 border border-white/[0.06] hover:border-white/[0.1]
+                text-slate-300 hover:text-white"
             >
               <Plus size={16} className="transition-transform group-hover:rotate-90 duration-200" />
               <span>New Chat</span>
-              <span className="ml-auto text-[10px] font-mono opacity-60 bg-white/10 px-1.5 py-0.5 rounded">
-                Ctrl+K
+              <span className="ml-auto text-[10px] font-mono text-slate-500 bg-white/[0.04] px-1.5 py-0.5 rounded">
+                ⌘K
               </span>
             </button>
           </div>
@@ -267,9 +267,6 @@ export default function Sidebar({
               }`} />
               <span className="text-[11px] text-slate-500">
                 {currentProvider?.label || activeProvider}
-              </span>
-              <span className="ml-auto text-[10px] text-slate-600 font-mono truncate max-w-[120px]">
-                {activeModel.split('/').pop()}
               </span>
             </div>
           </div>

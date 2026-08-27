@@ -95,21 +95,6 @@ export default function ChatView({
 
   return (
     <div className="flex flex-col h-full relative glow-bg">
-      {/* Header */}
-      <div className="relative z-10 px-6 py-3 border-b border-white/[0.04] glass">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-slate-200 truncate font-display">
-            {sessionTitle}
-          </h2>
-          <div className="flex items-center gap-2">
-            <span className={`w-1.5 h-1.5 rounded-full ${
-              activeProvider === 'ollama' ? 'bg-accent-emerald animate-pulse-dot' : 'bg-accent-indigo'
-            }`} />
-            <span className="text-[11px] text-slate-500">{providerLabel}</span>
-          </div>
-        </div>
-      </div>
-
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto relative z-10">
         {isEmpty ? (
@@ -119,11 +104,6 @@ export default function ChatView({
             <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] rounded-full bg-accent-indigo/[0.07] blur-3xl pointer-events-none" />
 
             <div className="relative animate-slide-up">
-              {/* Logo */}
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent-indigo to-accent-violet flex items-center justify-center mx-auto mb-6 shadow-glow overflow-hidden">
-                <LennyBrandLogo size={64} />
-              </div>
-
               {/* Greeting */}
               <h3 className="text-2xl font-bold text-white mb-2 font-display tracking-tight">
                 What are we building or{' '}
@@ -239,7 +219,7 @@ export default function ChatView({
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Ask about growth, PM frameworks, or request an artifact..."
+                  placeholder="Ask about product management, growth strategies, or request artifacts..."
                   className="flex-1 bg-transparent text-sm text-slate-200 placeholder-slate-600 resize-none focus:outline-none min-h-[24px] max-h-[200px] leading-relaxed"
                   rows={1}
                   disabled={isStreaming}
@@ -257,17 +237,6 @@ export default function ChatView({
                     <Send size={16} />
                   )}
                 </button>
-              </div>
-
-              {/* Mode indicator chips */}
-              <div className="flex items-center gap-2 px-4 pb-2.5">
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent-indigo/10 text-accent-indigo/70 border border-accent-indigo/10 flex items-center gap-1">
-                  <Zap size={9} />
-                  Grounded in Transcripts
-                </span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.04] text-slate-500 border border-white/[0.06]">
-                  {activeModel.split('/').pop()}
-                </span>
               </div>
             </div>
           </form>
