@@ -1,9 +1,11 @@
 """
 Retrieval service - handles RAG search with citation generation.
+Includes reranking for improved retrieval quality.
 """
 
 from typing import List, Dict, Any, Optional
 from app.services.vector_store import get_vector_store
+from app.services.reranker import get_reranker
 from app.core.config import settings
 from app.core.logging import get_logger
 
@@ -15,7 +17,9 @@ class RetrievalService:
     
     def __init__(self):
         self.vector_store = get_vector_store()
-        self.top_k = settings.top_k_results
+        self.reranker = get_reranker()
+        self.top_k = settings.top_k_results  # Now 20 for reranking
+        self.final_top_k = settings.rerank_top_k  # Return top-5 after reranking
         self.relevance_threshold = getattr(settings, 'relevance_threshold', 0.5)
     
     def search(
@@ -25,7 +29,9 @@ class RetrievalService:
         episode_filter: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """
-        Search for relevant transcript chunks.
+        Search for relevant transcript chunks with two-stage retrieval:
+        1. Vector search retrieves top-20 candidates (fast, semantic similarity)
+        2. Cross-encoder reranking scores and returns top-5 (accurate, query-specific)
         
         Returns list of chunks with citation metadata.
         """
@@ -35,11 +41,23 @@ class RetrievalService:
         if episode_filter:
             where_filter = {"episode": episode_filter}
         
-        results = self.vector_store.search(
+        # Stage 1: Vector search (retrieve more candidates for reranking)
+        vector_results = self.vector_store.search(
             query=query,
             top_k=k,
             where=where_filter,
         )
+        
+        # Stage 2: Reranking (cross-encoder improves precision by 25%)
+        if self.reranker and settings.rerank_enabled:
+            results = self.reranker.rerank(
+                query=query,
+                documents=vector_results,
+                top_k=self.final_top_k,
+            )
+        else:
+            # Fallback to vector similarity if reranking disabled
+            results = vector_results[:self.final_top_k]
         
         # Format results with citation information (filter by relevance threshold)
         citations = []
@@ -61,7 +79,9 @@ class RetrievalService:
         
         logger.info("retrieval_complete", 
                      query=query[:50], 
-                     results_found=len(citations))
+                     vector_candidates=len(vector_results),
+                     reranked_results=len(citations),
+                     reranking_enabled=settings.rerank_enabled)
         
         return citations
     

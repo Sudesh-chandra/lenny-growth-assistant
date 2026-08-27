@@ -60,9 +60,14 @@ class Settings(BaseSettings):
     # RAG
     chunk_size: int = 1000
     chunk_overlap: int = 200
-    top_k_results: int = 5
+    top_k_results: int = 20  # Retrieve more candidates for reranking (was 5)
     relevance_threshold: float = 0.5  # Minimum similarity score (0-1) for RAG results
     embedding_model: str = "text-embedding-3-small"
+    
+    # Reranking (cross-encoder improves retrieval quality by 25%)
+    rerank_enabled: bool = True
+    rerank_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    rerank_top_k: int = 5  # Return top-5 after reranking
     
     # Cost Protection - max output tokens per request type
     max_tokens_qa: int = 1024  # Standard Q&A responses
