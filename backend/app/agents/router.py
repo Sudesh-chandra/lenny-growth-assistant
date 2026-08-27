@@ -131,8 +131,9 @@ class AgentRouter:
                     )
             except ProviderError as e:
                 last_error = e
-                if not e.retryable:
-                    # Non-retryable errors (auth, credits) - don't fallback
+                # Allow fallback for insufficient credits (402) errors
+                if not e.retryable and e.code != ProviderErrorCode.INSUFFICIENT_CREDITS:
+                    # Non-retryable errors (auth, etc) - don't fallback
                     logger.warning(
                         "provider_non_retryable_error",
                         provider=provider,
