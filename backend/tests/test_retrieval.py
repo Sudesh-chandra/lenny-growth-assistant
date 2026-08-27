@@ -79,7 +79,7 @@ class TestVectorStore:
         
         mock_client = MagicMock()
         mock_client.get_or_create_collection.return_value = mock_collection
-        mock_chroma.Client.return_value = mock_client
+        mock_chroma.PersistentClient.return_value = mock_client
         
         from app.services.vector_store import VectorStore
         store = VectorStore()
@@ -103,7 +103,7 @@ class TestVectorStore:
         
         mock_client = MagicMock()
         mock_client.get_or_create_collection.return_value = mock_collection
-        mock_chroma.Client.return_value = mock_client
+        mock_chroma.PersistentClient.return_value = mock_client
         
         from app.services.vector_store import VectorStore
         store = VectorStore()

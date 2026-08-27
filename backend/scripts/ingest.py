@@ -287,10 +287,9 @@ def ingest_transcripts():
     # Initialize vector store
     vector_store = get_vector_store()
     
-    # Process each transcript
-    all_ids = []
-    all_documents = []
-    all_metadatas = []
+    # Process each transcript and store incrementally
+    total_chunks = 0
+    total_episodes = len(transcripts)
     
     for i, transcript in enumerate(transcripts):
         content = transcript["content"]
@@ -303,44 +302,48 @@ def ingest_transcripts():
             overlap=settings.chunk_overlap,
         )
         
-        if (i + 1) % 50 == 0:
-            print(f"  Processing episode {i + 1}/{len(transcripts)}: {metadata['episode'][:50]}...")
-        
-        logger.info("chunked_transcript",
-                     episode=metadata["episode"][:50],
-                     guest=metadata.get("guest", ""),
-                     chunks=len(chunks))
+        episode_ids = []
+        episode_documents = []
+        episode_metadatas = []
         
         for j, chunk in enumerate(chunks):
             if not chunk.strip():
                 continue
             
             chunk_id = str(uuid.uuid4())
-            all_ids.append(chunk_id)
-            all_documents.append(chunk)
-            all_metadatas.append({
+            episode_ids.append(chunk_id)
+            episode_documents.append(chunk)
+            episode_metadatas.append({
                 **metadata,
                 "chunk_index": j,
                 "total_chunks": len(chunks),
             })
+        
+        # Store this episode's chunks immediately
+        if episode_ids:
+            vector_store.add_chunks(
+                ids=episode_ids,
+                documents=episode_documents,
+                metadatas=episode_metadatas,
+            )
+            total_chunks += len(episode_ids)
+        
+        # Progress update every 10 episodes
+        if (i + 1) % 10 == 0 or (i + 1) == total_episodes:
+            store_count = vector_store.get_count()
+            print(f"  [{i + 1}/{total_episodes}] Stored {total_chunks} chunks so far (vector store: {store_count})")
     
-    # Add to vector store in batches
-    if all_ids:
-        print(f"\nStoring {len(all_ids)} chunks in vector store...")
-        vector_store.add_chunks(
-            ids=all_ids,
-            documents=all_documents,
-            metadatas=all_metadatas,
-        )
+    # Final summary
+    final_count = vector_store.get_count()
+    if final_count > 0:
         logger.info("ingestion_complete",
-                     total_chunks=len(all_ids),
+                     total_chunks=final_count,
                      total_transcripts=len(transcripts))
-        print(f"\n✅ Ingestion complete!")
+        print(f"\nIngestion complete!")
         print(f"  Episodes processed: {len(transcripts)}")
-        print(f"  Chunks created: {len(all_ids)}")
-        print(f"  Vector store size: {vector_store.get_count()} chunks")
+        print(f"  Chunks in vector store: {final_count}")
     else:
-        print("No chunks were created. Check your transcript files.")
+        print("No chunks were stored. Check your transcript files.")
 
 
 if __name__ == "__main__":

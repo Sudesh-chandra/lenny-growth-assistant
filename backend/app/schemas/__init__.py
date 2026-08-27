@@ -73,8 +73,8 @@ class ChatRequest(BaseModel):
     model_config = ConfigDict(protected_namespaces=())
     session_id: Optional[str] = Field(None, description="Existing session ID, or None for new session")
     message: str = Field(..., min_length=1, max_length=10000)
-    llm_provider: Optional[LLMProvider] = LLMProvider.OPENROUTER
-    model_name: Optional[str] = "anthropic/claude-sonnet-4"
+    llm_provider: Optional[LLMProvider] = None
+    model_name: Optional[str] = None
     skill: Optional[str] = Field(None, description="Skill to use: 'rag', 'ship30', 'artifact'")
 
 

@@ -3,7 +3,6 @@ Vector store service using ChromaDB for transcript embeddings and retrieval.
 """
 
 import chromadb
-from chromadb.config import Settings as ChromaSettings
 from typing import List, Dict, Any, Optional, Tuple
 from app.core.config import settings
 from app.core.logging import get_logger
@@ -15,10 +14,9 @@ class VectorStore:
     """ChromaDB-based vector store for transcript chunks."""
     
     def __init__(self):
-        self.client = chromadb.Client(ChromaSettings(
-            persist_directory=settings.chroma_persist_dir,
-            anonymized_telemetry=False,
-        ))
+        self.client = chromadb.PersistentClient(
+            path=settings.chroma_persist_dir,
+        )
         self.collection = self.client.get_or_create_collection(
             name=settings.chroma_collection_name,
             metadata={"hnsw:space": "cosine"},
