@@ -12,9 +12,9 @@ services:
     image: postgres:16-alpine
     container_name: lenny-postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: Valikala@1
-      POSTGRES_DB: lenny_growth
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme_in_production}
+      POSTGRES_DB: ${POSTGRES_DB:-lenny_growth}
     ports:
       - "5432:5432"
     volumes:
@@ -32,11 +32,11 @@ services:
     build: ./backend
     container_name: lenny-backend
     environment:
-      - DATABASE_URL=postgresql+asyncpg://postgres:Valikala%401@postgres:5432/lenny_growth
-      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-changeme_in_production}@postgres:5432/${POSTGRES_DB:-lenny_growth}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       - CHROMA_PERSIST_DIR=/app/chroma_data
-      - APP_ENV=production
-      - DEBUG=false
+      - APP_ENV=${APP_ENV:-production}
+      - DEBUG=${DEBUG:-false}
     env_file:
       - .env
     ports:
