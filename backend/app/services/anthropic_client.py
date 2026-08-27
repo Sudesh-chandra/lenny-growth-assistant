@@ -80,11 +80,11 @@ class AnthropicClient:
             from anthropic import AsyncAnthropic
             client = AsyncAnthropic(api_key=self.api_key)
             
+            # Anthropic SDK v1.0.0+ doesn't accept temperature parameter
             kwargs = {
                 "model": model,
                 "messages": anthropic_messages,
                 "max_tokens": max_tokens,
-                "temperature": temperature,
             }
             if system_msg:
                 kwargs["system"] = system_msg
@@ -113,11 +113,11 @@ class AnthropicClient:
             from anthropic import AsyncAnthropic
             client = AsyncAnthropic(api_key=self.api_key)
             
+            # Anthropic SDK v1.0.0+ doesn't accept temperature parameter
             kwargs = {
                 "model": model,
                 "messages": anthropic_messages,
                 "max_tokens": max_tokens,
-                "temperature": temperature,
                 "stream": True,
             }
             if system_msg:
