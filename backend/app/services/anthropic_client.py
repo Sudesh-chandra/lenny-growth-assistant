@@ -118,13 +118,15 @@ class AnthropicClient:
                 "messages": anthropic_messages,
                 "max_tokens": max_tokens,
                 "temperature": temperature,
+                "stream": True,
             }
             if system_msg:
                 kwargs["system"] = system_msg
             
-            async with client.messages.stream(**kwargs) as stream:
-                async for text in stream.text_stream:
-                    yield text
+            async with client.messages.create(**kwargs) as stream:
+                async for event in stream:
+                    if event.type == "content_block_delta":
+                        yield event.delta.text
         except Exception as e:
             logger.error("anthropic_stream_failed", error=str(e), model=model)
             raise RuntimeError(f"Anthropic stream failed: {str(e)}")
