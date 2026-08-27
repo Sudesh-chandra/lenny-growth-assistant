@@ -1,12 +1,12 @@
 """
-Models router - provides information about available LLM models.
+Models router - provides information about available LLM models and provider health.
 """
 
 from fastapi import APIRouter
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.schemas import ModelInfo, ModelsResponse
-from app.services import get_llm_client
+from app.services import get_llm_client, get_available_providers
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -114,3 +114,48 @@ async def list_models():
         active_provider=settings.llm_provider,
         active_model=active_model,
     )
+
+
+@router.get("/providers")
+async def provider_health():
+    """
+    Check health status of all LLM providers.
+    Returns availability and configuration status for each provider.
+    """
+    providers = {}
+    
+    # Check each provider
+    for provider_name in ["ollama", "openai", "anthropic", "openrouter"]:
+        client = get_llm_client(provider_name)
+        is_available = await client.is_available()
+        
+        # Determine status details
+        if provider_name == "ollama":
+            status = "available" if is_available else "unavailable"
+            detail = "Ollama is running" if is_available else "Ollama is not running or not accessible"
+        else:
+            api_key = getattr(settings, f"{provider_name}_api_key", None)
+            if not api_key:
+                status = "not_configured"
+                detail = f"{provider_name.capitalize()} API key not set in .env"
+            elif is_available:
+                status = "available"
+                detail = f"{provider_name.capitalize()} API key configured"
+            else:
+                status = "auth_failed"
+                detail = f"{provider_name.capitalize()} API key may be invalid"
+        
+        providers[provider_name] = {
+            "status": status,
+            "detail": detail,
+            "is_available": is_available,
+        }
+    
+    # Get list of available providers in priority order
+    available = await get_available_providers()
+    
+    return {
+        "providers": providers,
+        "available_providers": available,
+        "active_provider": settings.llm_provider,
+    }

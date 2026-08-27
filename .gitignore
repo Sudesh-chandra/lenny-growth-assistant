@@ -1,51 +1,66 @@
+# ==============================================================================
+# Lenny Growth Assistant - Git Ignore Rules
+# ==============================================================================
+
+# Environment & Secrets
+.env
+.env.local
+.env.production
+
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+*.egg
 *.egg-info/
 dist/
 build/
+.eggs/
+*.whl
 venv/
 .venv/
 env/
 
-# Environment
-.env
-.env.local
-.env.production
+# Node / Frontend
+node_modules/
+frontend/dist/
+frontend/.env.local
+frontend/.env.production
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# Node
-node_modules/
-frontend/dist/
-frontend/.vite/
-
-# Database
-chroma_db/
-*.sqlite3
-*.db
-
-# Docker
-.docker/
-
-# OS
+*~
 .DS_Store
 Thumbs.db
 
-# Logs
-*.log
-logs/
+# Database
+*.db
+*.sqlite3
 
-# Testing
-.coverage
-htmlcov/
+# ChromaDB / Vector Store
+backend/chroma_db/
+chroma_db/
+
+# Testing / Temp
+test_chat.json
+*.log
 .pytest_cache/
+htmlcov/
+.coverage
+
+# Docker
+docker-compose.override.yml
+
+# OS
+.DS_Store
+desktop.ini
+
+# Agent Transcripts (local dev only)
+agent_transcripts/
 
 # Secrets
 *.pem
@@ -54,3 +69,6 @@ htmlcov/
 # Assignment files
 Forward_Deployed_Engineer_Take_Home_Assignment.md
 Forward_Deployed_Engineer_Take_Home_Assignment.docx
+
+# Screenshots with errors
+docs/screenshots/*_ERROR.png

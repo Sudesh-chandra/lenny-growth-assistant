@@ -1,6 +1,7 @@
 """
 Core configuration module for Lenny Growth Assistant.
 Loads environment variables and provides typed settings.
+Reloaded with fresh API keys.
 """
 
 import os

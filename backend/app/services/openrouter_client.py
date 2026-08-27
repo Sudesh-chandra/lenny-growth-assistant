@@ -3,10 +3,12 @@ OpenRouter LLM client - provides access to 200+ models via a unified OpenAI-comp
 Supports Claude, GPT-4, Llama, Mistral, and many more through a single endpoint.
 """
 
+import json
 from typing import AsyncGenerator, Optional, List, Dict, Any
 import httpx
 from app.core.config import settings
 from app.core.logging import get_logger
+from app.services.provider_errors import ProviderError, ProviderErrorCode
 
 logger = get_logger(__name__)
 
@@ -99,7 +101,11 @@ class OpenRouterClient:
     ) -> str:
         """Generate a completion via OpenRouter."""
         if not self.api_key:
-            raise RuntimeError("OpenRouter API key not configured. Set OPENROUTER_API_KEY in your .env file.")
+            raise ProviderError(
+                "OpenRouter API key not configured",
+                code=ProviderErrorCode.NOT_CONFIGURED,
+                provider="openrouter",
+            )
         
         model = model or self.model
         
@@ -121,17 +127,56 @@ class OpenRouterClient:
         except httpx.HTTPStatusError as e:
             status = e.response.status_code
             body = e.response.text[:500]
-            if status == 402:
-                logger.error("openrouter_insufficient_credits", status=status, body=body)
-                raise RuntimeError(
-                    "OpenRouter: Insufficient credits (402 Payment Required). "
-                    "Please add credits at https://openrouter.ai/credits or switch to another model provider."
+            logger.error("openrouter_http_error", status=status)
+            if status == 401:
+                raise ProviderError(
+                    "OpenRouter authentication failed",
+                    code=ProviderErrorCode.AUTH_FAILED,
+                    provider="openrouter",
                 )
-            logger.error("openrouter_http_error", status=status, body=body)
-            raise RuntimeError(f"OpenRouter API error ({status}): {body}")
+            elif status == 402:
+                raise ProviderError(
+                    "OpenRouter insufficient credits",
+                    code=ProviderErrorCode.INSUFFICIENT_CREDITS,
+                    provider="openrouter",
+                    retryable=False,
+                )
+            elif status == 429:
+                raise ProviderError(
+                    "OpenRouter rate limit exceeded",
+                    code=ProviderErrorCode.RATE_LIMITED,
+                    provider="openrouter",
+                    retryable=True,
+                )
+            elif status >= 500:
+                raise ProviderError(
+                    "OpenRouter service unavailable",
+                    code=ProviderErrorCode.SERVICE_UNAVAILABLE,
+                    provider="openrouter",
+                    retryable=True,
+                )
+            else:
+                raise ProviderError(
+                    f"OpenRouter API error ({status})",
+                    code=ProviderErrorCode.UNKNOWN,
+                    provider="openrouter",
+                )
+        except httpx.RequestError as e:
+            raise ProviderError(
+                f"OpenRouter connection failed: {str(e)}",
+                code=ProviderErrorCode.CONNECTION_FAILED,
+                provider="openrouter",
+                retryable=True,
+            )
+        except ProviderError:
+            raise
         except Exception as e:
             logger.error("openrouter_completion_failed", error=str(e), model=model)
-            raise RuntimeError(f"OpenRouter completion failed: {str(e)}")
+            raise ProviderError(
+                f"OpenRouter completion failed: {str(e)}",
+                code=ProviderErrorCode.UNKNOWN,
+                provider="openrouter",
+            )
     
     async def stream(
         self,
@@ -142,12 +187,15 @@ class OpenRouterClient:
     ) -> AsyncGenerator[str, None]:
         """Stream a completion via OpenRouter token by token."""
         if not self.api_key:
-            raise RuntimeError("OpenRouter API key not configured. Set OPENROUTER_API_KEY in your .env file.")
+            raise ProviderError(
+                "OpenRouter API key not configured",
+                code=ProviderErrorCode.NOT_CONFIGURED,
+                provider="openrouter",
+            )
         
         model = model or self.model
         
         try:
-            import json
             client = await self._get_client()
             async with client.stream(
                 "POST",
@@ -162,12 +210,29 @@ class OpenRouterClient:
                 },
             ) as response:
                 # Handle HTTP errors before attempting to read the stream
-                if response.status_code == 402:
+                if response.status_code == 401:
+                    await response.aread()
+                    raise ProviderError(
+                        "OpenRouter authentication failed",
+                        code=ProviderErrorCode.AUTH_FAILED,
+                        provider="openrouter",
+                    )
+                elif response.status_code == 402:
                     body = await response.aread()
-                    logger.error("openrouter_insufficient_credits", status=402, body=body.decode()[:500])
-                    raise RuntimeError(
-                        "OpenRouter: Insufficient credits (402 Payment Required). "
-                        "Please add credits at https://openrouter.ai/credits or switch to another model provider."
+                    logger.error("openrouter_insufficient_credits", status=402)
+                    raise ProviderError(
+                        "OpenRouter insufficient credits",
+                        code=ProviderErrorCode.INSUFFICIENT_CREDITS,
+                        provider="openrouter",
+                        retryable=False,
+                    )
+                elif response.status_code == 429:
+                    await response.aread()
+                    raise ProviderError(
+                        "OpenRouter rate limit exceeded",
+                        code=ProviderErrorCode.RATE_LIMITED,
+                        provider="openrouter",
+                        retryable=True,
                     )
                 response.raise_for_status()
                 
@@ -191,18 +256,47 @@ class OpenRouterClient:
                         continue
         except httpx.HTTPStatusError as e:
             status = e.response.status_code
-            body = e.response.text[:500]
-            if status == 402:
-                logger.error("openrouter_insufficient_credits", status=status, body=body)
-                raise RuntimeError(
-                    "OpenRouter: Insufficient credits (402 Payment Required). "
-                    "Please add credits at https://openrouter.ai/credits or switch to another model provider."
+            logger.error("openrouter_stream_http_error", status=status)
+            if status == 401:
+                raise ProviderError(
+                    "OpenRouter authentication failed",
+                    code=ProviderErrorCode.AUTH_FAILED,
+                    provider="openrouter",
                 )
-            logger.error("openrouter_stream_http_error", status=status, body=body)
-            raise RuntimeError(f"OpenRouter stream error ({status}): {body}")
-        except RuntimeError:
-            # Re-raise RuntimeErrors (including 402) without wrapping
+            elif status == 402:
+                raise ProviderError(
+                    "OpenRouter insufficient credits",
+                    code=ProviderErrorCode.INSUFFICIENT_CREDITS,
+                    provider="openrouter",
+                    retryable=False,
+                )
+            elif status == 429:
+                raise ProviderError(
+                    "OpenRouter rate limit exceeded",
+                    code=ProviderErrorCode.RATE_LIMITED,
+                    provider="openrouter",
+                    retryable=True,
+                )
+            else:
+                raise ProviderError(
+                    f"OpenRouter stream error ({status})",
+                    code=ProviderErrorCode.UNKNOWN,
+                    provider="openrouter",
+                )
+        except httpx.RequestError as e:
+            raise ProviderError(
+                f"OpenRouter connection failed: {str(e)}",
+                code=ProviderErrorCode.CONNECTION_FAILED,
+                provider="openrouter",
+                retryable=True,
+            )
+        except ProviderError:
+            # Re-raise ProviderErrors without wrapping
             raise
         except Exception as e:
             logger.error("openrouter_stream_failed", error=str(e), model=model)
-            raise RuntimeError(f"OpenRouter stream failed: {str(e)}")
+            raise ProviderError(
+                f"OpenRouter stream failed: {str(e)}",
+                code=ProviderErrorCode.UNKNOWN,
+                provider="openrouter",
+            )

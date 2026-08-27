@@ -1,10 +1,12 @@
 """
 Agent Router - determines which skill/agent to use based on the user's request.
+Includes provider fallback: if the primary provider fails, tries the next available one.
 """
 
 from typing import Dict, Any, Optional, List, AsyncGenerator
 from app.core.logging import get_logger
 from app.services import get_llm_client
+from app.services.provider_errors import ProviderError, ProviderErrorCode, PROVIDER_PRIORITY
 from app.services.retrieval import get_retrieval_service
 from app.agents.rag_agent import RAGAgent
 from app.agents.ship30_agent import Ship30Agent
@@ -60,6 +62,103 @@ class AgentRouter:
         # Default to RAG grounded Q&A
         return "rag"
     
+    async def _execute_with_fallback(
+        self,
+        selected_skill: str,
+        message: str,
+        session_history: List[Dict[str, str]],
+        primary_provider: str,
+        model: Optional[str],
+        is_stream: bool = False,
+    ):
+        """
+        Execute the agent with automatic provider fallback.
+        If the primary provider fails with a retryable error, tries the next available provider.
+        """
+        # Build fallback order: primary first, then others by priority
+        fallback_order = [primary_provider] + [p for p in PROVIDER_PRIORITY if p != primary_provider]
+        last_error = None
+        
+        for provider in fallback_order:
+            try:
+                llm_client = get_llm_client(provider)
+                
+                if selected_skill == "ship30":
+                    if is_stream:
+                        return self.ship30_agent.execute_stream(
+                            message=message,
+                            session_history=session_history,
+                            llm_client=llm_client,
+                            model=model,
+                            retrieval=self.retrieval,
+                        )
+                    return await self.ship30_agent.execute(
+                        message=message,
+                        session_history=session_history,
+                        llm_client=llm_client,
+                        model=model,
+                        retrieval=self.retrieval,
+                    )
+                elif selected_skill == "artifact":
+                    if is_stream:
+                        return self.artifact_agent.execute_stream(
+                            message=message,
+                            session_history=session_history,
+                            llm_client=llm_client,
+                            model=model,
+                        )
+                    return await self.artifact_agent.execute(
+                        message=message,
+                        session_history=session_history,
+                        llm_client=llm_client,
+                        model=model,
+                    )
+                else:
+                    if is_stream:
+                        return self.rag_agent.execute_stream(
+                            message=message,
+                            session_history=session_history,
+                            llm_client=llm_client,
+                            model=model,
+                            retrieval=self.retrieval,
+                        )
+                    return await self.rag_agent.execute(
+                        message=message,
+                        session_history=session_history,
+                        llm_client=llm_client,
+                        model=model,
+                        retrieval=self.retrieval,
+                    )
+            except ProviderError as e:
+                last_error = e
+                if not e.retryable:
+                    # Non-retryable errors (auth, credits) - don't fallback
+                    logger.warning(
+                        "provider_non_retryable_error",
+                        provider=provider,
+                        code=e.code.value,
+                    )
+                    raise
+                logger.warning(
+                    "provider_failed_trying_next",
+                    provider=provider,
+                    code=e.code.value,
+                )
+                continue
+            except Exception as e:
+                last_error = e
+                logger.warning(
+                    "provider_unexpected_error_trying_next",
+                    provider=provider,
+                    error=str(e),
+                )
+                continue
+        
+        # All providers failed
+        if isinstance(last_error, ProviderError):
+            raise last_error
+        raise last_error or RuntimeError("All providers failed")
+    
     async def route(
         self,
         message: str,
@@ -73,36 +172,26 @@ class AgentRouter:
         
         Returns dict with: content, citations, has_artifact, artifact_data
         """
-        # Determine which skill to use
         selected_skill = skill or self.detect_skill(message)
         logger.info("routing_request", skill=selected_skill, provider=provider)
         
-        llm_client = get_llm_client(provider)
-        
         try:
-            if selected_skill == "ship30":
-                return await self.ship30_agent.execute(
-                    message=message,
-                    session_history=session_history,
-                    llm_client=llm_client,
-                    model=model,
-                    retrieval=self.retrieval,
-                )
-            elif selected_skill == "artifact":
-                return await self.artifact_agent.execute(
-                    message=message,
-                    session_history=session_history,
-                    llm_client=llm_client,
-                    model=model,
-                )
-            else:
-                return await self.rag_agent.execute(
-                    message=message,
-                    session_history=session_history,
-                    llm_client=llm_client,
-                    model=model,
-                    retrieval=self.retrieval,
-                )
+            return await self._execute_with_fallback(
+                selected_skill=selected_skill,
+                message=message,
+                session_history=session_history,
+                primary_provider=provider,
+                model=model,
+                is_stream=False,
+            )
+        except ProviderError as e:
+            logger.error("agent_routing_failed", error=e.user_message(), skill=selected_skill, provider=e.provider)
+            return {
+                "content": e.user_message(),
+                "citations": [],
+                "has_artifact": None,
+                "artifact_data": None,
+            }
         except Exception as e:
             logger.error("agent_routing_failed", error=str(e), skill=selected_skill)
             return {
@@ -122,41 +211,30 @@ class AgentRouter:
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """
         Route the request and stream the response token by token.
+        Includes provider fallback for retryable errors.
         
-        Yields dicts with: type (token/citations/artifact/done), data
+        Yields dicts with: type (token/citations/artifact/done/error), data
         """
         selected_skill = skill or self.detect_skill(message)
         logger.info("routing_stream", skill=selected_skill, provider=provider)
         
-        llm_client = get_llm_client(provider)
-        
         try:
-            if selected_skill == "ship30":
-                async for chunk in self.ship30_agent.execute_stream(
-                    message=message,
-                    session_history=session_history,
-                    llm_client=llm_client,
-                    model=model,
-                    retrieval=self.retrieval,
-                ):
-                    yield chunk
-            elif selected_skill == "artifact":
-                async for chunk in self.artifact_agent.execute_stream(
-                    message=message,
-                    session_history=session_history,
-                    llm_client=llm_client,
-                    model=model,
-                ):
-                    yield chunk
-            else:
-                async for chunk in self.rag_agent.execute_stream(
-                    message=message,
-                    session_history=session_history,
-                    llm_client=llm_client,
-                    model=model,
-                    retrieval=self.retrieval,
-                ):
-                    yield chunk
+            stream_gen = await self._execute_with_fallback(
+                selected_skill=selected_skill,
+                message=message,
+                session_history=session_history,
+                primary_provider=provider,
+                model=model,
+                is_stream=True,
+            )
+            async for chunk in stream_gen:
+                yield chunk
+        except ProviderError as e:
+            logger.error("stream_routing_failed", error=e.user_message(), skill=selected_skill, provider=e.provider)
+            yield {
+                "type": "error",
+                "data": e.user_message(),
+            }
         except Exception as e:
             logger.error("stream_routing_failed", error=str(e), skill=selected_skill)
             yield {
