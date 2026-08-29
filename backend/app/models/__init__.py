@@ -20,7 +20,7 @@ class Session(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     llm_provider = Column(String(50), default="openrouter")
-    model_name = Column(String(100), default="anthropic/claude-sonnet-4")
+    model_name = Column(String(100), default="google/gemma-4-31b:free")
     
     messages = relationship("Message", back_populates="session", cascade="all, delete-orphan", order_by="Message.created_at")
     artifacts = relationship("Artifact", back_populates="session", cascade="all, delete-orphan")

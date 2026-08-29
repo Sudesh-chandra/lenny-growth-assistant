@@ -35,7 +35,7 @@ async def create_session(
     session = Session(
         title=body.title or "New Chat",
         llm_provider=body.llm_provider.value if body.llm_provider else "openrouter",
-        model_name=body.model_name or "anthropic/claude-sonnet-4",
+        model_name=body.model_name or "google/gemma-4-31b:free",
     )
     db.add(session)
     await db.flush()
@@ -105,7 +105,7 @@ async def chat(body: ChatRequest, db: AsyncSession = Depends(get_db)):
         session = Session(
             title=body.message[:50] + "..." if len(body.message) > 50 else body.message,
             llm_provider=body.llm_provider.value if body.llm_provider else "openrouter",
-            model_name=body.model_name or "anthropic/claude-sonnet-4",
+            model_name=body.model_name or "google/gemma-4-31b:free",
         )
         db.add(session)
         await db.flush()
@@ -199,7 +199,7 @@ async def chat_stream(body: ChatRequest, db: AsyncSession = Depends(get_db)):
         session = Session(
             title=body.message[:50] + "..." if len(body.message) > 50 else body.message,
             llm_provider=body.llm_provider.value if body.llm_provider else "openrouter",
-            model_name=body.model_name or "anthropic/claude-sonnet-4",
+            model_name=body.model_name or "google/gemma-4-31b:free",
         )
         db.add(session)
         await db.flush()
