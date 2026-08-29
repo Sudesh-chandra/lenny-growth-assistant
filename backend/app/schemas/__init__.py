@@ -51,7 +51,7 @@ class SessionCreate(BaseModel):
     model_config = ConfigDict(protected_namespaces=())
     title: Optional[str] = "New Chat"
     llm_provider: Optional[LLMProvider] = LLMProvider.OPENROUTER
-    model_name: Optional[str] = "google/gemma-4-31b:free"
+    model_name: Optional[str] = "nvidia/nemotron-3-super-120b-a12b:free"
 
 
 class SessionResponse(BaseModel):
